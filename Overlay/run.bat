@@ -1,0 +1,10 @@
+python -m GenerateOverlay --shrink-mm 0 --marker-width-mm 11.8 --marker-depth-mm 5.9
+python -m GenerateOverlay --shrink-mm 1 --marker-width-mm 11.1 --marker-depth-mm 5.6
+python -m GenerateOverlay --shrink-mm 2 --marker-width-mm 10.4 --marker-depth-mm 5.2
+python -m GenerateOverlay --shrink-mm 3 --marker-width-mm 9.7 --marker-depth-mm 4.9
+python -m GenerateOverlay --shrink-mm 4 --marker-width-mm 9 --marker-depth-mm 4.5
+python -m GenerateOverlay --shrink-mm 5 --marker-width-mm 8.3 --marker-depth-mm 4.2
+python -m GenerateOverlay --shrink-mm 6 --marker-width-mm 7.6 --marker-depth-mm 3.8
+python -m GenerateOverlay --shrink-mm 7 --marker-width-mm 6.9 --marker-depth-mm 3.5
+python -m GenerateOverlay --shrink-mm 8 --marker-width-mm 6.2 --marker-depth-mm 3.1
+python -m GenerateOverlay --shrink-mm 9 --marker-width-mm 5.5 --marker-depth-mm 2.8
