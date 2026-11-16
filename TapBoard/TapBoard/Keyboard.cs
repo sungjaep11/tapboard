@@ -15,11 +15,17 @@ namespace TapBoard
         private TouchMouseFilter touchMouseFilter;
         private bool hookErrorReported;
         private bool audioErrorReported;
+        private bool experimentErrorReported;
 
         private void RefreshKeyLabels(object sender, EventArgs e)
         {
             keyArea.SaveTouchTrace();
             keyArea.RefreshHeldKeys();
+            if (!experimentErrorReported && keyArea.Diagnostics.Experiment?.Failure != null)
+            {
+                experimentErrorReported = true;
+                MessageBox.Show("Touch experiment logging failed: " + keyArea.Diagnostics.Experiment.Failure, "TapBoard");
+            }
             if (clickFeedback != null && clickFeedback.Failure != null && !audioErrorReported)
             {
                 audioErrorReported = true;

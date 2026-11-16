@@ -77,6 +77,7 @@
     <Compile Include="KeyboardLayout.cs" />
     <Compile Include="WindowsTouchInput.cs" />
     <Compile Include="TouchDiagnostics.cs" />
+    <Compile Include="TouchExperimentLog.cs" />
     <Compile Include="WindowsKeyboardOutput.cs" />
     <Compile Include="ClickMixer.cs" />
     <Compile Include="DisplayGeometry.cs" />

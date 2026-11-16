@@ -8,6 +8,14 @@ namespace TapBoard
     // Record on the input thread; never perform periodic disk I/O in a touch callback.
     internal sealed class TouchDiagnostics
     {
+        internal TouchExperimentLog Experiment { get; private set; }
+        internal void StartExperiment()
+        {
+            if (Experiment == null && KeyboardSettings.Current.ExperimentLogging)
+                Experiment = new TouchExperimentLog(System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs);
+        }
         private readonly bool traceTouches;
         private readonly string destination;
         internal TouchDiagnostics() : this(KeyboardSettings.Current.TraceTouches,
@@ -19,6 +27,8 @@ namespace TapBoard
 
         internal void TraceTouch(string stage, int id, int x, int y, string detail)
         {
+            if (stage == "LOCK" || stage == "UNLOCK" || stage == "ACCEPT" || stage == "REJECT_DUPLICATE" || stage == "NATIVE_ERROR")
+                Experiment?.Record(stage, id, x, y, "", detail);
             if (!traceTouches) return;
             if (touchTrace.Count >= 10000) touchTrace.Dequeue();
             touchTrace.Enqueue(traceClock.Elapsed.TotalMilliseconds.ToString("F3",
@@ -36,6 +46,8 @@ namespace TapBoard
         private bool traceFinalSaved;
         internal void SaveTouchTrace(bool final = false)
         {
+            if (final) Experiment?.Dispose();
+            else Experiment?.Record("heartbeat");
             if (!traceTouches) return;
             if (!final && (traceClock.ElapsedMilliseconds - lastTraceSave < 1000 ||
                 System.Threading.Interlocked.CompareExchange(ref traceSavePending, 1, 0) != 0)) return;

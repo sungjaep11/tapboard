@@ -66,19 +66,24 @@ namespace TapBoard
                     (int)Math.Round(touch.y / 100.0)));
                 int id = (int)touch.id;
                 string detail = touch.time + ";flags=" + touch.flags;
+                Key owner = input.GetContactKey(id);
+                string keyType = owner == null ? "BLANK" : owner.Definition.type.ToString();
                 if ((touch.flags & WindowsTouchInput.Down) != 0)
                 {
                     TraceTouch("NATIVE_DOWN", id, pt.X, pt.Y, detail);
+                    Diagnostics.Experiment?.Record("down", id, pt.X, pt.Y, keyType, detail);
                     OnTouchDown(id, pt, (touch.flags & WindowsTouchInput.Primary) != 0);
                 }
                 else if ((touch.flags & WindowsTouchInput.Up) != 0)
                 {
                     TraceTouch("NATIVE_UP", id, pt.X, pt.Y, detail);
+                    Diagnostics.Experiment?.Record("up", id, pt.X, pt.Y, keyType, detail);
                     OnTouchUp(id, pt);
                 }
                 else if ((touch.flags & WindowsTouchInput.Move) != 0)
                 {
                     TraceTouch("NATIVE_MOVE", id, pt.X, pt.Y, detail);
+                    Diagnostics.Experiment?.Record("move", id, pt.X, pt.Y, keyType, detail);
                     OnTouchMove(id, pt);
                 }
             }
@@ -104,6 +109,7 @@ namespace TapBoard
                 WindowsTouchInput.UnregisterTouchWindow(Handle);
                 TouchGestureSettings.Remove(Handle);
             }
+            Diagnostics.Experiment?.Record("reset", detail: "touch-window-destroyed");
             base.OnHandleDestroyed(e);
         }
 
@@ -144,6 +150,7 @@ namespace TapBoard
         {
             input.KeyInput += (sender, args) => KeyInput?.Invoke(this, args);
             input.StateChanged += InvalidateKeyboard;
+            Diagnostics.StartExperiment();
 
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);
