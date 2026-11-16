@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Tapboard+ 타이핑 실험 및 이벤트 기록 도구"><title>Tapboard+ · Typing lab</title>
+<style>:root{--bg:#f5f6f8;--ink:#202b32;--muted:#7c868e;--border:#e5e9ec;--teal:#087f75;--pale:#eef8f5;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}button,input,select,textarea{font:inherit}button,a,input,select,textarea,summary{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{cursor:default;opacity:.42}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #55b6aa;outline-offset:3px}a{color:inherit;text-decoration:none}.topbar{height:78px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%}.brand{display:flex;align-items:center;font-size:24px;font-weight:750;letter-spacing:-1px}.brand-icon{background:var(--teal);color:white;border-radius:9px;width:33px;height:33px;display:grid;place-content:center;font-size:27px;position:relative;margin-right:12px}.brand-icon span{font-size:15px;position:absolute;right:4px;top:1px}.brand-plus{color:var(--teal)}.lab-label{font-size:10px;font-weight:600;letter-spacing:2px;color:#829097;border-left:1px solid var(--border);margin-left:22px;padding-left:22px}.local-tag{font-size:12px;color:#5f7172;display:flex;align-items:center;gap:8px}.local-tag i,.tiny-dot{width:6px;height:6px;border-radius:50%;background:#8ea7a1;display:inline-block}main{max-width:1376px;padding:43px 40px 20px;margin:auto}.heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:31px}.eyebrow{font:10px var(--mono);letter-spacing:1.8px;color:var(--teal);margin-bottom:13px}h1{font-size:30px;font-weight:650;letter-spacing:-1.1px;margin:0 0 10px}.heading p{margin:0;color:var(--muted);font-size:13px}.button{border:1px solid transparent;border-radius:7px;padding:12px 18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:10px;justify-content:center;transition:background .15s}.button:hover:not(:disabled){filter:brightness(.96)}.secondary{background:white;border-color:#dce3e5;color:#3e515a}.button span{font:10px var(--mono);color:inherit}.primary{background:var(--teal);color:white}.dark{background:#25383e;color:white}.small{font-size:11px;padding:9px 12px}.workspace{display:grid;grid-template-columns:288px minmax(0,1fr);gap:22px}.panel{border:1px solid var(--border);background:#fff;border-radius:12px;box-shadow:0 3px 8px #223b4c03}.setup{padding:24px}.section-title{display:flex;align-items:center;gap:10px}h2{font-size:14px;font-weight:650;margin:0}.step{font:10px var(--mono);color:#829097;background:#f3f5f6;padding:5px;border-radius:4px}.small-label{font:9px var(--mono);letter-spacing:1.2px;color:#a0a9ad;margin-left:auto}fieldset{border:0;padding:0;margin:23px 0 0;min-width:0}label{display:block;font-size:11px;color:#5e6c74;margin:16px 0 7px}fieldset>label:first-of-type{margin-top:0}label span{color:#a1aaaf;font-weight:400;font-size:10px;margin-left:2px}input,select,textarea{width:100%;border:1px solid #e0e6e8;border-radius:6px;background:#fafbfc;color:#33454e;padding:10px;outline:none;font-size:12px}input:focus,select:focus,textarea:focus{border-color:#48a89c;box-shadow:0 0 0 3px #0583730a}select{height:37px}textarea{resize:vertical;line-height:1.6}fieldset:disabled{opacity:.6}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setup-foot{display:flex;gap:8px;border-top:1px solid #edf0f2;margin-top:21px;padding-top:17px;align-items:flex-start}.setup-foot .tiny-dot{margin-top:6px}.setup-foot p{font-size:10px;line-height:1.8;color:#89949b;margin:0}.typing-panel{padding:26px 30px;display:flex;flex-direction:column}.state{margin-left:auto;background:#f0f3f5;color:#72818b;font-size:10px;padding:6px 10px;border-radius:20px}.state.active{background:#e4f6ed;color:#087f75}.session-meta{display:flex;gap:17px;align-items:center;margin-top:29px;font:10px var(--mono);letter-spacing:1px;color:#91a0a6}.session-meta>span:first-child{color:#596f77}.text-button{background:none;border:0;padding:4px 0;color:#268679;font-size:11px}.session-meta .text-button{margin-left:auto}.cue{display:flex;align-items:center;gap:13px;background:var(--pale);border:1px solid #dfeee8;border-radius:7px;padding:17px;margin:16px 0 25px;min-height:75px}.cue>span:first-child{background:white;border:1px solid #d3e9e3;border-radius:7px;width:34px;height:34px;display:grid;place-content:center;color:var(--teal);font-size:20px}.cue strong{font-size:13px;color:#23685e;font-weight:600}.cue p{font-size:11px;color:#729086;margin:6px 0 0}.cue.resting{background:#fff8ed;border-color:#f2e6ce}.cue.resting strong{color:#9a6e29}#countdown{margin-left:auto;font:26px var(--mono);color:var(--teal)}.prompt-label{display:flex;justify-content:space-between;font-size:11px;color:#8b979d;margin-bottom:15px}.prompt-label span{font:11px var(--mono)}.prompt{font:25px/1.7 var(--mono);letter-spacing:-.5px;min-height:85px;white-space:pre-wrap;overflow-wrap:anywhere;color:#66767e}.prompt .correct{color:#008775}.prompt .incorrect{background:#fff0ee;color:#c45b52;border-radius:2px}.prompt .cursor{border-bottom:2px solid #15a18d}.progress-track{height:3px;background:#f1f4f5;margin:14px 0 21px}.progress-track div{height:100%;width:0;background:#32a28e;transition:width .1s}.typing{font:19px/1.8 var(--mono);padding:18px;background:#fbfcfd;min-height:125px;resize:vertical}.typing::placeholder{font:12px/2 sans-serif;color:#acb4b9}.typing:disabled{background:#f8fafb;color:#73838a}.input-caption{display:flex;justify-content:space-between;font-size:9px;color:#9ba5ab;margin:10px 0 27px;gap:10px}.controls{display:flex;gap:10px;margin-top:auto}.controls .muted{margin-left:auto;color:#98a2a8}.recording-line{border-top:1px solid #edf1f2;margin-top:22px;padding-top:17px;font-size:10px;color:#9aa5ab;display:flex;align-items:center;gap:7px}.recording-line>span:last-child{margin-left:auto;font:12px var(--mono);color:#6e8089}.live-dot{background:#0d9986;box-shadow:0 0 0 3px #0d998614}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:22px 0}.metric{padding:21px 22px;border:1px solid var(--border);border-radius:10px;background:white}.metric>div{font-size:11px;color:#6f7e85;display:flex;justify-content:space-between;gap:6px}.metric>div span{font:9px var(--mono);color:#a0adb3}.metric strong{display:block;font:32px var(--mono);letter-spacing:-1px;margin:15px 0 10px}.metric:first-child strong{color:var(--teal)}.metric small{font-size:9px;color:#9ca7ad}.results{padding:23px 25px}.results-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:21px}.count{font:10px var(--mono);background:#eff4f3;color:var(--teal);border-radius:4px;padding:3px 6px}.export-buttons{display:flex;gap:8px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:11px}th{background:#f8fafb;padding:12px;color:#93a0a7;font-weight:500;border-block:1px solid #edf1f3}td{border-bottom:1px solid #eff2f3;padding:14px 12px;color:#52666e}td.numeric{font-family:var(--mono)}td small{color:#97a3a8;margin-left:5px}.empty{padding:36px 15px;text-align:center;color:#85969e}.empty>span{display:block;font-size:29px;color:#b5c7c9;margin-bottom:10px}.empty strong{font-size:12px;font-weight:500}.empty p{font-size:10px;color:#a4afb4;margin:9px 0}.guide{margin:25px 0;background:#edf1f3;border-radius:8px;padding:16px 20px;color:#70838d}.guide summary{cursor:pointer;font-size:11px;list-style:none;display:flex;justify-content:space-between}.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px 35px;padding:10px 0}.guide h3{font-size:12px;font-weight:600}.guide p{font-size:11px;line-height:1.9;color:#7d8c93}footer{display:flex;justify-content:space-between;font-size:10px;color:#abb5ba;padding:7px 0 15px}footer b{font-size:8px;font-weight:500;letter-spacing:1px;margin-left:13px}.notice{padding:14px 18px;border:1px solid #ebdcb5;background:#fff7e6;color:#906924;border-radius:8px;margin-bottom:20px;font-size:12px}.sr-only{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}dialog{border:1px solid #dce5e7;border-radius:14px;max-width:800px;width:90%;max-height:85vh;padding:26px;color:var(--ink)}dialog::backdrop{background:#10272d70;backdrop-filter:blur(3px)}.dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 25px}.detail-grid>div{padding:10px 0;display:flex;justify-content:space-between;border-bottom:1px solid #edf0f1;font-size:12px}.detail-grid b{font:12px var(--mono)}.detail-text{background:#f4f7f8;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 var(--mono)}.muted-text{font-size:11px;line-height:1.8;color:#839199}[hidden]{display:none!important}
+@media(min-width:1500px){main{padding-top:54px}}@media(max-width:1050px){main{padding:30px 22px}.workspace{grid-template-columns:250px minmax(0,1fr);gap:16px}.typing-panel{padding:24px}.metric{padding:18px 14px}.metric>div{font-size:10px}.metric small{font-size:8px}.prompt{font-size:22px}.input-caption{flex-wrap:wrap}.controls{gap:6px}.controls .button{padding:12px}}
+@media(max-width:760px){.topbar{height:65px;padding:0 20px}.lab-label{display:none}.local-tag{font-size:10px}.heading{align-items:flex-start;gap:15px}h1{font-size:23px}.heading>.button{font-size:0;padding:11px}.heading>.button span{font-size:11px}.heading p{font-size:11px}.workspace{grid-template-columns:1fr}.setup{padding:20px}.setup fieldset{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}.setup fieldset>label{grid-column:1/-1;margin:7px 0 0}.setup fieldset>input,.setup fieldset>select,.setup fieldset>textarea,#customWrap,.setup fieldset>.field-row{grid-column:1/-1}.setup-foot{display:none}.typing-panel{padding:22px}.metrics{grid-template-columns:repeat(2,1fr)}.metric:last-child{grid-column:1/-1}.metric strong{font-size:28px}.results{padding:20px 15px}.results-head{align-items:flex-start;gap:20px}.export-buttons{flex-direction:column}.guide-grid{grid-template-columns:1fr}.prompt{font-size:22px}.controls{flex-wrap:wrap}.controls .muted{margin-left:0}.detail-grid{grid-template-columns:1fr}footer>span:last-child{display:none}}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="./"><span class="brand-icon">t<span>+</span></span>tapboard<span class="brand-plus">+</span><span class="lab-label">TYPING LAB</span></a><div class="local-tag"><i></i> 이 브라우저에 저장</div></header>
+<main>
+<div class="heading"><div><div class="eyebrow">EXPERIMENT WORKSPACE / 01</div><h1>타이핑을 관찰하는 공간.</h1><p>손을 쉬고, 문장을 입력하고, 각 순간을 기록하세요.</p></div><button id="exportAll" class="button secondary">↓ 전체 데이터 <span>JSON</span></button></div>
+<div id="notice" class="notice" role="status" hidden></div>
+<div class="workspace">
+<aside class="panel setup">
+<div class="section-title"><span class="step">01</span><h2>실험 설정</h2><span class="small-label">SETUP</span></div>
+<fieldset id="settings"><legend class="sr-only">실험 설정</legend>
+<label for="participant">참가자 ID</label><input id="participant" value="P01" maxlength="80" autocomplete="off">
+<label for="condition">키보드 조건</label><select id="condition"><option>Tapboard+</option>Tapboard+ · Overlay</option><option>일반 터치 키보드</option><option>물리 키보드</option><option>기타</option></select>
+<div class="field-row"><div><label for="block">블록</label><input id="block" type="number" min="1" max="999" value="1"></div><div><label for="trialKind">측정 구분</label><select id="trialKind"><option value="measured">본 실험</option><option value="practice">연습</option></select></div></div>
+<label for="language">프롬프트 세트</label><select id="language"><option value="en">English · 짧은 문장</option><option value="ko">한국어 · 짧은 문장</option><option value="custom">직접 입력</option></select>
+<div id="customWrap" hidden><label for="customPrompt">사용자 문장 (최대 500자)</label><textarea id="customPrompt" maxlength="500" rows="3">The quick brown fox jumps over the lazy dog.</textarea></div>
+<div class="field-row"><div><label for="restSeconds">시작 전 레스팅 <span>초</span></label><input id="restSeconds" type="number" min="0" max="120" step="1" value="3"></div><div><label for="idleSeconds">무입력 기준 <span>초</span></label><input id="idleSeconds" type="number" min="0.2" max="60" step="0.1" value="2"></div></div>
+<label for="notes">조건 메모</label><textarea id="notes" rows="2" maxlength="2000" placeholder="오버레이, 피드백, 기기 설정 등"></textarea>
+</fieldset>
+<div class="setup-foot"><span class="tiny-dot"></span><p>설정은 회차 시작 시 고정됩니다.<br>연습 기록도 별도 표시하여 저장합니다.</p></div>
+</aside>
+<section class="panel typing-panel">
+<div class="section-title"><span class="step">02</span><h2>타이핑 세션</h2><span id="state" class="state">준비됨</span></div>
+<div class="session-meta"><span id="trialLabel">TRIAL 01</span><span id="phraseLabel">ENGLISH / 01</span><button id="nextPrompt" class="text-button">다른 문장 ↗</button></div>
+<div id="cue" class="cue" role="status"><span id="cueIcon">↳</span><div><strong id="cueTitle">편안하게 준비하세요</strong><p id="cueText">기록을 시작하면 레스팅 후 입력 신호가 표시됩니다.</p></div><span id="countdown"></span></div>
+<div class="prompt-label">아래 문장을 그대로 입력하세요 <span id="progressLabel">0 / 0</span></div>
+<div id="prompt" class="prompt" aria-label="입력할 문장"></div>
+<div class="progress-track"><div id="progressBar"></div></div>
+<label for="typing" class="sr-only">타이핑 입력 영역</label>
+<textarea id="typing" class="typing" placeholder="입력 신호가 나타나면 여기에 타이핑하세요…" rows="3" disabled spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
+<div class="input-caption"><span>공백·대소문자·문장부호를 포함합니다.</span><span>붙여넣기 차단 · 한글 IME 지원</span></div>
+<div class="controls"><button id="start" class="button primary"><span>●</span> 로깅 시작</button><button id="rest" class="button secondary" disabled>Ⅱ 레스팅</button><button id="finish" class="button dark" disabled>회차 완료 ↗</button><button id="abort" class="text-button muted" disabled>중단</button></div>
+<div class="recording-line"><span id="recordingDot" class="tiny-dot"></span><span id="recordingStatus">기록 대기 중</span><span id="elapsed">00:00.0</span></div>
+</section>
+</div>
+<section class="metrics" aria-label="실시간 측정값">
+<article class="metric"><div>입력 속도 <span>WPM</span></div><strong id="wpm">—</strong><small>첫 문자 → 마지막 편집</small></article>
+<article class="metric"><div>문장 정확도 <span>%</span></div><strong id="accuracy">—</strong><small>전체 프롬프트 · 편집 거리 기준</small></article>
+<article class="metric"><div>첫 키 반응 <span>ms</span></div><strong id="latency">—</strong><small>입력 신호 → 첫 키 이벤트</small></article>
+<article class="metric"><div>지시된 레스팅 <span>sec</span></div><strong id="restMetric">0.0</strong><small>시작 전 + 수동 레스팅</small></article>
+<article class="metric"><div>무입력 시간 <span>sec</span></div><strong id="idleMetric">0.0</strong><small>기준 이상 간격 · 레스팅 제외</small></article>
+</section>
+<section class="panel results">
+<div class="results-head"><div class="section-title"><span class="step">03</span><h2>회차 기록</h2><span id="recordCount" class="count">0</span></div><div class="export-buttons"><button id="exportSummary" class="button small secondary">↓ 요약 CSV</button><button id="exportEvents" class="button small secondary">↓ 이벤트 CSV</button></div></div>
+<div class="table-scroll"><table><thead><tr><th>회차 / 참가자</th><th>조건</th><th>상태</th><th>WPM</th><th>정확도</th><th>첫 키</th><th>레스팅</th><th>상세</th></tr></thead><tbody id="records"></tbody></table></div>
+<div id="empty" class="empty"><span>⌨</span><strong>첫 번째 기록을 기다리고 있어요.</strong><p>설정을 확인한 뒤 로깅을 시작하세요. 완료한 회차가 여기에 쌓입니다.</p></div>
+</section>
+<details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 손이 실제로 닿았는지는 확인하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다.</p></div></div></details>
+<footer><span>tapboard+ <b>RESEARCH TOOLS</b></span><span>Observe the interaction. Keep the evidence.</span></footer>
+</main>
+<dialog id="detail"><div class="dialog-head"><h2>회차 상세</h2><button id="closeDetail" class="button small secondary">닫기</button></div><div id="detailBody"></div></dialog>
+<script>(function (root) {
+  'use strict';
+  const chars = s => Array.from((s || '').normalize('NFC'));
+  function distance(a, b) {
+    a = chars(a); b = chars(b);
+    let row = Array.from({length: b.length + 1}, (_, i) => i);
+    for (let i = 0; i < a.length; i++) {
+      const next = [i + 1];
+      for (let j = 0; j < b.length; j++) next[j + 1] = Math.min(next[j] + 1, row[j + 1] + 1, row[j] + (a[i] === b[j] ? 0 : 1));
+      row = next;
+    }
+    return row[b.length];
+  }
+  function delta(before, after) {
+    const a = chars(before), b = chars(after); let start = 0, end = 0;
+    while (start < Math.min(a.length,b.length) && a[start] === b[start]) start++;
+    while (end < Math.min(a.length,b.length) - start && a[a.length-1-end] === b[b.length-1-end]) end++;
+    return {added: b.length-start-end, removed: a.length-start-end};
+  }
+  function union(intervals) {
+    const result = [];
+    for (const [a,b] of intervals.filter(x=>x[1]>x[0]).sort((x,y)=>x[0]-y[0])) {
+      const last = result[result.length-1];
+      if (last && a <= last[1]) last[1] = Math.max(last[1],b); else result.push([a,b]);
+    }
+    return result;
+  }
+  function subtract(intervals, exclusions) {
+    let result = intervals;
+    for (const [a,b] of union(exclusions)) result = result.flatMap(([s,e]) => b <= s || a >= e ? [[s,e]] : [[s,Math.min(e,a)],[Math.max(s,b),e]].filter(([x,y])=>y>x));
+    return result;
+  }
+  const sum = xs => xs.reduce((a,b)=>a+b,0);
+  const avg = xs => xs.length ? sum(xs)/xs.length : null;
+  function summarize(t, now = t.endMs ?? t.lastSavedMs ?? 0) {
+    const events = t.events || [], text = t.text || '', length = chars(text).length;
+    const inputs = events.filter(e=>e.type==='text_commit' && e.added>0);
+    const keys = events.filter(e=>e.type==='keydown' && e.typingKey);
+    const rests = union((t.rests||[]).map(r=>[r.start,r.end ?? now]));
+    const first = inputs[0]?.t ?? null, last = events.filter(e=>e.type==='text_commit').at(-1)?.t ?? null;
+    const typingMs = first === null || last === null ? 0 : last-first;
+    const min = typingMs/60000;
+    const cue = t.cueMs ?? null;
+    const keyTimes = keys.map(e=>e.t);
+    const gaps = keyTimes.slice(1).map((v,i)=>v-keyTimes[i]);
+    const points = [cue,...keyTimes,now].filter(v=>v!==null && v>= (cue ?? now));
+    const idleIntervals = cue===null ? [] : subtract(points.slice(1).map((v,i)=>[points[i],v]),rests).filter(([a,b])=>b-a>=t.config.idleMs);
+    const pending = new Map(), dwell=[];
+    for (const e of events) {
+      if (e.type==='keydown' && !e.repeat) pending.set(e.code,e.t);
+      if (e.type==='keyup' && pending.has(e.code)) { dwell.push(e.t-pending.get(e.code)); pending.delete(e.code); }
+      if (e.type==='blur' || e.type==='rest_start') pending.clear();
+    }
+    const errors = distance(t.prompt,text), denom = Math.max(chars(t.prompt).length,length);
+    const hidden = union(events.filter(e=>e.type==='hidden').map(e=>[e.t,events.find(f=>f.type==='visible'&&f.t>=e.t)?.t ?? now]));
+    return {
+      duration_ms: now, instructed_rest_ms: sum(rests.map(([a,b])=>b-a)), rest_count: rests.length,
+      cue_ms: cue, first_key_from_start_ms: keys[0]?.t ?? null,
+      first_key_after_cue_ms: cue!==null && keys.length ? keys[0].t-cue : null,
+      first_text_after_cue_ms: cue!==null && first!==null ? first-cue : null,
+      first_text_ms: first, last_text_ms: last, transcription_ms: typingMs,
+      characters: length, inserted_characters: sum(inputs.map(e=>e.added)),
+      removed_characters: sum(events.filter(e=>e.type==='text_commit').map(e=>e.removed)),
+      wpm: min>0 ? Math.max(0,length-1)/5/min : null,
+      cpm: min>0 ? Math.max(0,length-1)/min : null,
+      edit_distance: errors, error_rate_pct: denom ? errors/denom*100 : 0,
+      accuracy_pct: denom ? (1-errors/denom)*100 : 100,
+      keydown_count: keys.length, backspace_count: keys.filter(e=>e.key==='Backspace').length,
+      delete_count: keys.filter(e=>e.key==='Delete').length,
+      repeat_count: keys.filter(e=>e.repeat).length,
+      kspc: length ? keys.length/length : null, mean_iki_ms: avg(gaps), mean_key_dwell_ms: avg(dwell),
+      idle_ms: sum(idleIntervals.map(([a,b])=>b-a)), idle_count: idleIntervals.length,
+      idle_intervals: idleIntervals, max_iki_ms: gaps.length ? Math.max(...gaps) : null,
+      focus_loss_count: events.filter(e=>e.type==='blur').length,
+      hidden_ms: sum(hidden.map(([a,b])=>b-a)),
+      blocked_paste_count: events.filter(e=>e.type==='paste_blocked'||e.type==='drop_blocked').length,
+      composition_count: events.filter(e=>e.type==='compositionstart').length,
+      exact_match: t.prompt.normalize('NFC')===text.normalize('NFC')
+    };
+  }
+  function csv(rows) {
+    if (!rows.length) return '';
+    const fields = [...new Set(rows.flatMap(Object.keys))];
+    const cell = value => {
+      let s = value == null ? '' : typeof value==='object' ? JSON.stringify(value) : String(value);
+      // Prevent spreadsheet formulas in participant text and transcriptions.
+      if (typeof value==='string' && /^[\s]*[=+@-]/.test(s)) s="'"+s;
+      return '"'+s.replaceAll('"','""')+'"';
+    };
+    return '\uFEFF'+[fields.map(cell).join(','),...rows.map(r=>fields.map(f=>cell(r[f])).join(','))].join('\r\n');
+  }
+  root.TapMetrics = {chars,distance,delta,union,subtract,summarize,csv};
+  if (typeof module!=='undefined') module.exports=root.TapMetrics;
+})(typeof window!=='undefined' ? window : globalThis);
+</script><script>'use strict';
+const $ = id => document.getElementById(id), M = TapMetrics;
+const VERSION = '1.0.0', SCHEMA = 'tapboard-study/v1';
+const phrases = {
+  en: ['The quick brown fox jumps over the lazy dog.','A quiet morning is a good time to start.','Place your hands gently on the keyboard.','Small steps can lead to meaningful changes.','The warm light falls across the wooden desk.','Take a short break before the next sentence.','We learn something new with every attempt.','Keep your eyes on the words in front of you.'],
+  ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
+};
+let records = [], active = null, origin = 0, phase = 'ready', phraseIndex = 0;
+let composing = false, committed = '', db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
+const fmt = (n, digits=1) => n == null || !Number.isFinite(n) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
+const time = () => Math.round((performance.now()-origin)*1000)/1000;
+const promptText = () => $('language').value==='custom' ? $('customPrompt').value : phrases[$('language').value][phraseIndex % phrases[$('language').value].length];
+const notify = s => { $('notice').textContent=s; $('notice').hidden=false; };
+const id = () => globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+function event(type, data={}) {
+  if (!active) return;
+  const t = time();
+  active.events.push({seq:active.events.length,t,utc:new Date(active.startedUnix+t).toISOString(),type,...data});
+  active.lastSavedMs=t;
+}
+function txPut(record) {
+  return new Promise((resolve,reject)=> {
+    const tx = db.transaction('trials','readwrite');
+    tx.objectStore('trials').put(record);
+    tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error); tx.onabort=()=>reject(tx.error);
+  });
+}
+function persist(record) {
+  if (!record) return Promise.resolve();
+  const snapshot = JSON.parse(JSON.stringify(record));
+  saveQueue = saveQueue.then(async()=>{
+    if (!db) throw new Error('Storage unavailable');
+    await txPut(snapshot);
+    storageBroken=false;
+  }).catch(()=>{
+    storageBroken=true;
+    notify('브라우저 저장소에 기록하지 못했습니다. 현재 데이터는 메모리에 유지됩니다. 창을 닫기 전에 전체 JSON을 내보내세요.');
+  });
+  return saveQueue;
+}
+function loadDB() {
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open('tapboard-study',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('trials',{keyPath:'id'});
+    request.onerror=()=>reject(request.error);
+    request.onsuccess=()=>{
+      db=request.result;
+      db.onversionchange=()=>db.close();
+      const read=db.transaction('trials').objectStore('trials').getAll();
+      read.onsuccess=()=>resolve(read.result); read.onerror=()=>reject(read.error);
+    };
+  });
+}
+function renderPrompt() {
+  const target = active?.prompt ?? promptText(), typed=M.chars(active?.text ?? '');
+  const fragment=document.createDocumentFragment();
+  M.chars(target).forEach((c,i)=>{
+    const span=document.createElement('span'); span.textContent=c;
+    span.className=i<typed.length ? (c===typed[i] ? 'correct':'incorrect') : i===typed.length ? 'cursor':'';
+    fragment.append(span);
+  });
+  if (typed.length>M.chars(target).length) {
+    const extra=document.createElement('span');extra.className='incorrect';extra.textContent=typed.slice(M.chars(target).length).join('');fragment.append(extra);
+  }
+  $('prompt').replaceChildren(fragment);
+  const length=M.chars(target).length;
+  $('progressLabel').textContent=`${typed.length} / ${length}`;
+  $('progressBar').style.width=`${Math.min(100,length?typed.length/length*100:0)}%`;
+  $('phraseLabel').textContent=$('language').value==='custom'?'CUSTOM':`${$('language').value==='ko'?'한국어':'ENGLISH'} / ${String(phraseIndex+1).padStart(2,'0')}`;
+}
+function setCue(title,description,icon='↳',resting=false) {
+  $('cueTitle').textContent=title; $('cueText').textContent=description; $('cueIcon').textContent=icon; $('cue').classList.toggle('resting',resting);
+}
+function setPhase(next) {
+  phase=next;
+  const running=!!active;
+  $('state').textContent=({ready:'준비됨',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:'저장됨'})[next];
+  $('state').classList.toggle('active',running);
+  $('settings').disabled=running; $('start').disabled=running; $('nextPrompt').disabled=running;
+  $('rest').disabled=!['typing','rest'].includes(next); $('finish').disabled=!['typing','rest'].includes(next); $('abort').disabled=!running;
+  $('rest').textContent=next==='rest'?'▶ 입력 재개':'Ⅱ 레스팅';
+  $('typing').disabled=next!=='typing';
+  $('recordingDot').classList.toggle('live-dot',running);
+  $('recordingStatus').textContent=running?'이 회차의 이벤트를 기록하고 있습니다':storageBroken?'저장 실패 · 파일로 내보내세요':'기록 대기 중';
+  $('start').innerHTML=next==='done'?'<span>●</span> 다음 회차 시작':'<span>●</span> 로깅 시작';
+}
+function start() {
+  if (active) return;
+  for (const name of ['participant','block','restSeconds','idleSeconds']) {
+    if (!$(name).reportValidity()) return;
+  }
+  if (!$('participant').value.trim()) {notify('참가자 ID를 입력하세요.');$('participant').focus();return;}
+  const prompt=promptText().normalize('NFC');
+  if (!prompt.trim()) {notify('입력할 문장을 먼저 작성하세요.');return;}
+  origin=performance.now();composing=false;committed='';$('typing').value='';$('countdown').textContent='';
+  active={schema:SCHEMA,version:VERSION,id:id(),sessionId:sessionId,trial:records.length+1,
+    participant:$('participant').value.trim(),condition:$('condition').value,block:Number($('block').value),
+    kind:$('trialKind').value,language:$('language').value,promptIndex:phraseIndex,prompt,
+    notes:$('notes').value,config:{restMs:Number($('restSeconds').value)*1000,idleMs:Number($('idleSeconds').value)*1000},
+    startedUnix:Date.now(),startedAt:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
+    environment:{userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight},screen:{width:screen.width,height:screen.height},devicePixelRatio:devicePixelRatio},
+    status:'running',text:'',events:[],rests:[],cueMs:null,lastSavedMs:0};
+  event('trial_start');$('trialLabel').textContent=`TRIAL ${String(active.trial).padStart(2,'0')}`;
+  if (active.config.restMs>0) {
+    active.rests.push({start:0,end:null,kind:'instructed_baseline'});event('rest_start',{kind:'instructed_baseline'});
+    setPhase('baseline');setCue('손을 편안하게 쉬어 주세요','카운트다운이 끝나면 문장을 입력하세요.','Ⅱ',true);
+  } else beginTyping();
+  renderPrompt();renderRecords();persist(active);renderMetrics(active,0);
+}
+function beginTyping() {
+  if (!active) return;
+  const now=time(), open=active.rests.find(r=>r.end===null);
+  if (open) {open.end=now;event('rest_end',{kind:open.kind,duration_ms:now-open.start});}
+  if (active.cueMs===null) active.cueMs=now;
+  event('typing_cue');setPhase('typing');$('countdown').textContent='';
+  setCue('지금 입력하세요','정확하고 편안한 속도로 문장을 입력한 뒤 회차를 완료하세요.','→');
+  $('typing').focus();persist(active);
+}
+function toggleRest() {
+  if (!active || !['typing','rest'].includes(phase)) return;
+  if (composing) {notify('한글 조합을 확정한 뒤 레스팅을 시작하세요.');$('typing').focus();return;}
+  if (phase==='rest') return beginTyping();
+  active.rests.push({start:time(),end:null,kind:'instructed_manual'});event('rest_start',{kind:'instructed_manual'});
+  setPhase('rest');setCue('잠시 손을 쉬어 주세요','준비되면 입력 재개 버튼을 누르세요. 이 구간도 기록됩니다.','Ⅱ',true);persist(active);
+}
+function commitText(inputType='') {
+  if (!active || phase!=='typing' || composing) return;
+  const next=$('typing').value.normalize('NFC');
+  if (next!==committed) {
+    const d=M.delta(committed,next);
+    event('text_commit',{inputType,before:committed,after:next,...d});committed=next;active.text=next;
+    renderPrompt();
+  }
+}
+async function finish(status='completed') {
+  if (!active) return;
+  if (composing) {notify('한글 조합을 확정한 뒤 회차를 완료하세요.');$('typing').focus();return;}
+  commitText();event(status==='completed'?'trial_complete':'trial_abort');
+  const now=time(), ended=active;
+  for (const r of ended.rests) if (r.end===null) r.end=now;
+  ended.endMs=now;ended.endedAt=new Date(ended.startedUnix+now).toISOString();ended.lastSavedMs=now;ended.status=status;ended.metrics=M.summarize(ended);
+  records.push(ended);active=null;
+  setPhase('done');$('countdown').textContent='';
+  setCue(status==='completed'?'회차가 완료되었습니다':'중단한 회차도 보관합니다','데이터를 저장하고 있습니다.','✓');
+  renderMetrics(ended,now);renderRecords();
+  await persist(ended);
+  if (!active) {
+    $('recordingStatus').textContent=storageBroken?'저장 실패 · 파일로 내보내세요':`${ended.events.length}개 이벤트 · 이 브라우저에 저장됨`;
+    $('cueText').textContent=storageBroken?'저장에 실패했습니다. 전체 JSON으로 데이터를 내보내세요.':'요약 CSV 또는 전체 JSON으로 내보낼 수 있습니다. 다음 회차도 같은 문장으로 시작합니다.';
+  }
+}
+function renderMetrics(trial,now) {
+  const m=M.summarize(trial,now);
+  $('wpm').textContent=fmt(m.wpm);$('accuracy').textContent=fmt(m.accuracy_pct);$('latency').textContent=fmt(m.first_key_after_cue_ms,0);
+  $('restMetric').textContent=fmt(m.instructed_rest_ms/1000);$('idleMetric').textContent=fmt(m.idle_ms/1000);
+  $('elapsed').textContent=`${String(Math.floor(now/60000)).padStart(2,'0')}:${(now%60000/1000).toFixed(1).padStart(4,'0')}`;
+}
+function renderRecords() {
+  $('records').replaceChildren();$('recordCount').textContent=records.length;$('empty').hidden=!!records.length;
+  for (const r of [...records].reverse()) {
+    const m=r.metrics || M.summarize(r), row=document.createElement('tr');
+    const values=[`${String(r.trial).padStart(2,'0')} / ${r.participant}`,`${r.condition} · B${r.block}`,`${r.kind==='practice'?'연습 · ':''}${({completed:'완료',aborted:'중단',interrupted:'복구 / 불완전'})[r.status]||r.status}`,fmt(m.wpm),fmt(m.accuracy_pct)+'%',fmt(m.first_key_after_cue_ms,0)+' ms',fmt(m.instructed_rest_ms/1000)+' s'];
+    values.forEach((value,i)=>{const cell=document.createElement('td');cell.textContent=value;if(i>2)cell.className='numeric';row.append(cell);});
+    const cell=document.createElement('td'),button=document.createElement('button');button.className='text-button';button.textContent='보기 ↗';button.onclick=()=>showDetail(r);cell.append(button);row.append(cell);$('records').append(row);
+  }
+  for (const name of ['exportSummary','exportEvents','exportAll']) $(name).disabled=!records.length&&!active;
+}
+function showDetail(r) {
+  const m=r.metrics || M.summarize(r),body=$('detailBody');body.replaceChildren();
+  const title=document.createElement('p');title.className='muted-text';title.textContent=`${r.participant} · ${r.condition} · ${r.startedAt} · ${r.kind} · ${r.status}`;body.append(title);
+  const grid=document.createElement('div');grid.className='detail-grid';
+  const specs=[['WPM',m.wpm],['CPM',m.cpm],['정확도 (%)',m.accuracy_pct],['편집 거리',m.edit_distance],['총 기록 시간 (ms)',m.duration_ms],['첫 문자 → 마지막 편집 (ms)',m.transcription_ms],['첫 키 / 입력 신호 (ms)',m.first_key_after_cue_ms],['첫 문자 / 입력 신호 (ms)',m.first_text_after_cue_ms],['첫 키 / 기록 시작 (ms)',m.first_key_from_start_ms],['지시된 레스팅 (ms)',m.instructed_rest_ms],['무입력 시간 (ms)',m.idle_ms],['무입력 구간 수',m.idle_count],['평균 키 간 간격 (ms)',m.mean_iki_ms],['평균 키 누름 시간 (ms)',m.mean_key_dwell_ms],['KSPC',m.kspc],['입력 키 이벤트 수',m.keydown_count],['Backspace / Delete',`${m.backspace_count} / ${m.delete_count}`],['삽입 / 삭제 문자',`${m.inserted_characters} / ${m.removed_characters}`],['포커스 이탈',m.focus_loss_count],['탭 숨김 (ms)',m.hidden_ms],['한글 조합 횟수',m.composition_count],['이벤트 수',r.events.length]];
+  for(const [label,value] of specs){const line=document.createElement('div'),name=document.createElement('span'),val=document.createElement('b');name.textContent=label;val.textContent=typeof value==='string'?value:fmt(value);line.append(name,val);grid.append(line);}body.append(grid);
+  for(const [name,text] of [['프롬프트',r.prompt],['입력 결과',r.text],['조건 메모',r.notes]]){const label=document.createElement('h3'),p=document.createElement('p');label.textContent=name;p.className='detail-text';p.textContent=text||'—';body.append(label,p);}
+  $('detail').showModal();
+}
+function snapshotRecords() {
+  const all=JSON.parse(JSON.stringify(records));
+  if(active){const r=JSON.parse(JSON.stringify(active));r.lastSavedMs=time();r.metrics=M.summarize(r,r.lastSavedMs);all.push(r);}return all;
+}
+function download(name,content,mime) {
+  const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+}
+function exportData(kind) {
+  if(active) event('export',{kind});
+  const all=snapshotRecords(),stamp=new Date().toISOString().replace(/[:.]/g,'-');
+  if(!all.length){notify('내보낼 기록이 없습니다.');return;}
+  if(kind==='json')return download(`tapboard-${stamp}.json`,JSON.stringify({schema:SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),definitions:{rest:'instructed intervals; not physical contact detection',wpm:'max(0,NFC character count - 1) / 5 / minutes(first insertion to last committed edit); rests included',accuracy:'100 * (1 - Levenshtein(target, text) / max(length(target), length(text)))',idle:'full typing-key gaps >= threshold, excluding instructed rest intervals',timestamps:'monotonic milliseconds from trial start; UTC anchored to trial start',ime:'composition snapshots retained; text commits counted after composition',storage:'local browser; active checkpoints approximately every 1 second'},trials:all},null,2),'application/json');
+  const rows=kind==='summary'?all.map(r=>{
+    const {idle_intervals,...metrics}=r.metrics||M.summarize(r);
+    return {schema:r.schema,trial_id:r.id,session_id:r.sessionId,participant:r.participant,condition:r.condition,block:r.block,trial:r.trial,kind:r.kind,status:r.status,language:r.language,started_at:r.startedAt,ended_at:r.endedAt,timezone:r.timezone,prompt:r.prompt,transcription:r.text,notes:r.notes,idle_threshold_ms:r.config.idleMs,baseline_rest_ms:r.config.restMs,...metrics};
+  }):all.flatMap(r=>r.events.map(e=>({trial_id:r.id,participant:r.participant,condition:r.condition,block:r.block,trial:r.trial,kind:r.kind,status:r.status,...e})));
+  download(`tapboard-${kind}-${stamp}.csv`,M.csv(rows),'text/csv;charset=utf-8');
+}
+const sessionId=id();
+$('start').onclick=start;$('rest').onclick=toggleRest;$('finish').onclick=()=>finish();$('abort').onclick=()=>finish('aborted');
+$('exportAll').onclick=()=>exportData('json');$('exportSummary').onclick=()=>exportData('summary');$('exportEvents').onclick=()=>exportData('events');$('closeDetail').onclick=()=>$('detail').close();
+$('language').onchange=()=>{phraseIndex=0;$('customWrap').hidden=$('language').value!=='custom';if(!active){$('typing').value='';renderPrompt();}};
+$('customPrompt').oninput=()=>{if(!active)renderPrompt();};
+$('nextPrompt').onclick=()=>{if(active)return;if($('language').value==='custom'){$('customPrompt').focus();return;}phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;$('typing').value='';renderPrompt();};
+for(const type of ['keydown','keyup']) $('typing').addEventListener(type,e=>{
+  if(!active || phase!=='typing') return;
+  const typingKey=!(e.ctrlKey||e.metaKey||e.altKey) && (e.key.length===1 || ['Backspace','Delete','Enter','Process','Unidentified','Dead'].includes(e.key) || e.isComposing);
+  event(type,{key:e.key,code:e.code,repeat:e.repeat,ctrl:e.ctrlKey,alt:e.altKey,shift:e.shiftKey,meta:e.metaKey,isComposing:e.isComposing,typingKey,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
+});
+$('typing').addEventListener('beforeinput',e=>{
+  if(!active)return;
+  if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop') {e.preventDefault();event('paste_blocked',{inputType:e.inputType});return;}
+  event('beforeinput',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
+});
+$('typing').addEventListener('input',e=>{event('input',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,value:$('typing').value});if(!e.isComposing)commitText(e.inputType);});
+$('typing').addEventListener('compositionstart',e=>{composing=true;event('compositionstart',{data:e.data});});
+$('typing').addEventListener('compositionupdate',e=>event('compositionupdate',{data:e.data}));
+$('typing').addEventListener('compositionend',e=>{composing=false;event('compositionend',{data:e.data});commitText('compositionend');});
+for(const type of ['paste','drop']) $('typing').addEventListener(type,e=>{e.preventDefault();event(type+'_blocked');});
+for(const type of ['focus','blur']) $('typing').addEventListener(type,()=>event(type,{target:'typing'}));
+window.addEventListener('blur',()=>event('window_blur'));
+window.addEventListener('focus',()=>event('window_focus'));
+document.addEventListener('visibilitychange',()=>{event(document.hidden?'hidden':'visible');if(active)persist(active);});
+window.addEventListener('beforeunload',e=>{if(active){event('unload_attempt');persist(active);e.preventDefault();e.returnValue='';}});
+setInterval(()=>{
+  if(!active)return;
+  const now=time();
+  // Only show the cue when the participant can actually see it. Background time remains logged.
+  if(phase==='baseline') {
+    const left=Math.max(0,active.config.restMs-now);$('countdown').textContent=(left/1000).toFixed(1);
+    if(left===0&&!document.hidden)beginTyping();
+  }else if(phase==='rest')$('countdown').textContent=((now-active.rests.at(-1).start)/1000).toFixed(1);
+  if(now-renderedAt>=200||now<renderedAt){renderMetrics(active,now);renderedAt=now;}
+},100);
+setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
+(async()=>{
+  $('start').disabled=true;
+  try {
+    records=await loadDB();records.sort((a,b)=>a.startedUnix-b.startedUnix);
+    let recovered=0;
+    for(const r of records)if(r.status==='running'){
+      r.status='interrupted';r.endMs=r.lastSavedMs;r.endedAt=new Date(r.startedUnix+r.endMs).toISOString();
+      for(const rest of r.rests)if(rest.end===null)rest.end=r.endMs;
+      r.events.push({seq:r.events.length,t:r.endMs,utc:r.endedAt,type:'recovered_checkpoint'});r.metrics=M.summarize(r);await persist(r);recovered++;
+    }
+    if(recovered)notify(`${recovered}개의 진행 중 기록을 마지막 저장 시점까지 복구했습니다. 불완전한 회차로 표시했습니다.`);
+  }catch{storageBroken=true;notify('이 환경에서는 브라우저 저장소를 사용할 수 없습니다. 파일 내보내기는 가능합니다. 창을 닫기 전에 데이터를 저장하세요.');}
+  $('start').disabled=false;$('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
+  renderRecords();renderPrompt();
+})();
+</script></body></html>
