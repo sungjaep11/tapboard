@@ -12,8 +12,9 @@ INPUT BEHAVIOR
 
 Character and space keys commit on release only when the contact is at least
 10 ms and shorter than 300 ms and its release displacement is less than 60 pixels. Resting
-contacts do not type. Backspace and arrow keys activate immediately and repeat
-while held. Hold Shift, Ctrl, Alt or Win while tapping another key.
+contacts do not type. Backspace and arrow keys activate immediately, wait 450 ms
+before the first repeat, then repeat every 100 ms while held. Release stops
+repeating without another input. Hold Shift, Ctrl, Alt or Win while tapping another key.
 Shift/Ctrl/Alt now stay down in Windows for the lifetime of the touch, as Win
 already does. Hold Alt and tap Tab repeatedly, use Shift+Tab or the arrows,
 then lift Alt to commit the selected window. Tab remains a brief-release tap;
@@ -74,7 +75,9 @@ SameKeyMinIntervalMs: suppress consecutive same-key accepted taps less than
 modifiers are not suppressed. Normal held-key repeat is unaffected. Suppression
 happens after release classification and adds no waiting. REJECT_DUPLICATE marks
 suppressed taps in diagnostics; rejected contacts do not extend the interval.
-RepeatIntervalMs: held Backspace/arrow repeat interval (100). A late callback never
+RepeatDelayMs: delay before the first held Backspace/arrow repeat (450 ms,
+range 1-5000). Initial input is immediate; every fresh press gets the full delay.
+RepeatIntervalMs: subsequent held Backspace/arrow repeat interval (100). A late callback never
 shortens the following interval or generates catch-up bursts. MOVE packets
 do not trigger full keyboard paints; rendering honors the invalidated region.
 Ordinary DOWN/UP repaints only the contact owner key, even if release occurs

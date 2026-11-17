@@ -11,7 +11,8 @@ namespace TapBoard
         private Stroke stroke = null;       // held normal key
         private readonly HashSet<int> modifierContacts = new HashSet<int>();
         private readonly Dictionary<int, Stroke> tappingContacts = new Dictionary<int, Stroke>();
-        private readonly RepeatSchedule repeatSchedule = new RepeatSchedule(KeyboardSettings.Current.RepeatIntervalMs);
+        private readonly RepeatSchedule repeatSchedule = new RepeatSchedule(
+            KeyboardSettings.Current.RepeatDelayMs, KeyboardSettings.Current.RepeatIntervalMs);
 
         public bool IsActive()      // is pressed. 
         {

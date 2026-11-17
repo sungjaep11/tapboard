@@ -128,6 +128,9 @@ internal static class Program
             r.Down("Alt", 1);
             r.Down("→", 2);
             r.Expect("12:0,27:1,27:3");
+            System.Threading.Thread.Sleep(KeyboardSettings.Current.RepeatDelayMs + 20);
+            r.Controller.Repeat();
+            r.Expect("27:1,27:3");
             System.Threading.Thread.Sleep(KeyboardSettings.Current.RepeatIntervalMs + 20);
             r.Controller.Repeat();
             r.Expect("27:1,27:3");
@@ -140,6 +143,26 @@ internal static class Program
             r.Expect("12:2");
         }
         Console.WriteLine("PASS: held arrow repeats preserve Alt, and arrow release stops repeat.");
+
+        using (var r = new Rig())
+        {
+            foreach (string code in new[] { "{BKSP}", "{LEFT}", "{RIGHT}", "{UP}", "{DOWN}" })
+            {
+                string label = r.Controller.keys.Single(k => k.GetName() == code).GetLabel(false);
+                r.Down(label, 1);
+                Check(r.Events.Count == 2, code + " did not emit exactly one immediate key press");
+                r.Events.Clear();
+                System.Threading.Thread.Sleep(150);
+                r.Controller.Repeat();
+                r.Expect("");
+                r.Up(label, 1);
+                r.Expect("");
+            }
+            System.Threading.Thread.Sleep(KeyboardSettings.Current.RepeatDelayMs + 20);
+            r.Controller.Repeat();
+            r.Expect("");
+        }
+        Console.WriteLine("PASS: 150ms Backspace and all four arrow taps emit once on touch; release adds no input or pending repeat.");
 
         using (var r = new Rig())
         {

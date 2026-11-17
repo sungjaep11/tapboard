@@ -21,6 +21,7 @@ namespace TapBoard
         internal readonly double TapDistancePixels = Number("TapDistancePixels", 60, 1, 1000);
         // Limit distinct non-modifier keys; held modifiers have separate ownership.
         internal readonly int MaxActiveKeys = Integer("MaxActiveKeys", 2, 1, 10);
+        internal readonly int RepeatDelayMs = Integer("RepeatDelayMs", 450, 1, 5000);
         internal readonly int RepeatIntervalMs = Integer("RepeatIntervalMs", 100, 10, 2000);
         // Debounce consecutive accepted taps on one key; zero disables this policy.
         internal readonly int SameKeyMinIntervalMs = Integer("SameKeyMinIntervalMs", 100, 0, 1000);
