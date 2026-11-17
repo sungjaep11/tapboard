@@ -8,13 +8,14 @@ namespace TapBoard
     // finger must not consume another finger's brief tap on the same key.
     internal sealed class KeyState
     {
-        private Stroke stroke = null;       // held normal/modifier key
+        private Stroke stroke = null;       // held normal key
+        private readonly HashSet<int> modifierContacts = new HashSet<int>();
         private readonly Dictionary<int, Stroke> tappingContacts = new Dictionary<int, Stroke>();
         private readonly RepeatSchedule repeatSchedule = new RepeatSchedule(KeyboardSettings.Current.RepeatIntervalMs);
 
         public bool IsActive()      // is pressed. 
         {
-            return stroke != null || tappingContacts.Count != 0;
+            return stroke != null || tappingContacts.Count != 0 || modifierContacts.Count != 0;
         }
 
         public bool IsExpired()
@@ -46,6 +47,7 @@ namespace TapBoard
         {
             stroke = null;
             tappingContacts.Clear();
+            modifierContacts.Clear();
             repeatSchedule.Stop();
         }
 
@@ -116,34 +118,13 @@ namespace TapBoard
 
         private bool OnKeyAreaEventForModifierKey(KeyAreaEvent e, int pointID, int x, int y)
         {
-            bool acceptKey = false;
-
-            switch (e)
+            if (e == KeyAreaEvent.TOUCH && IsPointInside(x, y))
             {
-                case KeyAreaEvent.TOUCH:
-                    if (stroke == null && IsPointInside(x, y))
-                    {
-                        stroke = new Stroke(pointID, x, y);
-                        acceptKey = true;
-                    }
-                    break;
-
-                case KeyAreaEvent.MOVE:
-                    if (stroke != null && stroke.pointID == pointID)
-                    {
-                        stroke.AddPoint(pointID, x, y);
-                    }
-                    break;
-
-                case KeyAreaEvent.RELEASE:
-                    if (stroke != null && stroke.pointID == pointID)
-                    {
-                        stroke.AddPoint(pointID, x, y);
-                        stroke = null;
-                    }
-                    break;
+                // Keep held until the last owning finger lifts, even off-key.
+                return modifierContacts.Add(pointID) && modifierContacts.Count == 1;
             }
-            return acceptKey;
+            if (e == KeyAreaEvent.RELEASE) modifierContacts.Remove(pointID);
+            return false;
         }
 
         private readonly KeyDefinition definition;

@@ -5,72 +5,110 @@ using System.Runtime.InteropServices;
 namespace TapBoard
 {
     // Inject physical virtual-key transitions, preserving the target's IME and
-    // physical modifiers. Own the held Windows key so shutdown can release it.
+    // existing modifiers. Only release native holds acquired by this output.
     internal sealed class WindowsKeyboardOutput : IDisposable
     {
         private const uint InputKeyboard = 1, KeyUp = 2, ExtendedKey = 1;
-        private bool windowsKeyDown;
+        private bool shiftDown, controlDown, altDown, windowsKeyDown;
+        private bool wantShift, wantControl, wantAlt;
+        private bool disposed;
+        private readonly Func<ushort, bool> isKeyDown;
+        private readonly Func<Input[], uint> sendInputs;
         internal TouchDiagnostics Diagnostics;
+
+        internal WindowsKeyboardOutput()
+        {
+            isKeyDown = key => (GetAsyncKeyState(key) & 0x8000) != 0;
+            sendInputs = SendNativeInputs;
+        }
+        // Exercise the actual output/ownership policy without injecting OS input.
+        internal WindowsKeyboardOutput(Func<ushort, bool> isKeyDown, Func<Input[], uint> sendInputs)
+        {
+            this.isKeyDown = isKeyDown;
+            this.sendInputs = sendInputs;
+        }
+        internal void SetModifiers(bool shift, bool control, bool alt)
+        {
+            if (disposed) return;
+            wantShift = shift;
+            wantControl = control;
+            wantAlt = alt;
+            SynchronizeModifiers();
+        }
+        private bool SynchronizeModifiers()
+        {
+            // Keep injected ownership separate from GetAsyncKeyState: that API
+            // includes our own injected downs, not just physical keyboard input.
+            bool ready = SetHeldKey(0x10, wantShift, ref shiftDown);
+            ready &= SetHeldKey(0x11, wantControl, ref controlDown);
+            ready &= SetHeldKey(0x12, wantAlt, ref altDown);
+            return ready;
+        }
+        private bool SetHeldKey(ushort key, bool down, ref bool owned, bool extended = false)
+        {
+            if (down)
+            {
+                if (owned || isKeyDown(key)) return true;
+                if (!SendVirtualKey(key, false, extended)) return false;
+                owned = true;
+            }
+            else if (owned)
+            {
+                if (!SendVirtualKey(key, true, extended)) return false;
+                owned = false;
+            }
+            return true;
+        }
         internal bool Send(KeyInputEventArgs args)
         {
+            if (disposed) return false;
             if (args.key == "{WIN_DOWN}" || args.key == "{WIN_UP}")
             {
-                windowsKeyDown = args.key == "{WIN_DOWN}";
-                SendVirtualKey(0x5B, !windowsKeyDown, true);
+                SetHeldKey(0x5B, args.key == "{WIN_DOWN}", ref windowsKeyDown, true);
                 return false;
             }
             if (args.key.Length == 0) return false;
-            string code = args.key;
-            if (code == "{HANGUL}" || code == "{HANJA}")
-            {
-                ushort virtualKey = (ushort)(code == "{HANGUL}" ? 0x15 : 0x19);
-                SendVirtualKey(virtualKey, false, false);
-                SendVirtualKey(virtualKey, true, false);
-                return true;
-            }
-            Input[] inputs = BuildKeyInputs(args,
-                (GetAsyncKeyState(0x10) & 0x8000) != 0,
-                (GetAsyncKeyState(0x11) & 0x8000) != 0,
-                (GetAsyncKeyState(0x12) & 0x8000) != 0);
-            if (inputs.Length > 0)
-            {
-                IntPtr foreground = GetForegroundWindow();
-                uint sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Input)));
-                int error = sent == inputs.Length ? 0 : Marshal.GetLastWin32Error();
-                Diagnostics?.TraceDelivery(sent, inputs.Length, error, foreground);
-                if (sent != inputs.Length) Debug.WriteLine("SendInput failed: " + error);
-            }
-            return inputs.Length > 0;
+            // Retry failed transitions (or acquire a formerly physical hold)
+            // before sending a target key. Never turn a failed shortcut into text.
+            if (!SynchronizeModifiers()) return false;
+            Input[] inputs = BuildKeyInputs(args);
+            if (inputs.Length == 0) return false;
+            uint sent = sendInputs(inputs);
+            if (sent == 1) SendVirtualKey(inputs[0].data.keyboard.virtualKey, true,
+                (inputs[0].data.keyboard.flags & ExtendedKey) != 0);
+            return sent == inputs.Length;
         }
         public void Dispose()
         {
-            if (windowsKeyDown) SendVirtualKey(0x5B, true, true);
-            windowsKeyDown = false;
+            wantShift = wantControl = wantAlt = false;
+            SynchronizeModifiers();
+            SetHeldKey(0x5B, false, ref windowsKeyDown, true);
+            disposed = true;
         }
         // Physical key events preserve Caps Lock and the target app's IME.
         // Include the full native union for both x86 and x64.
         [StructLayout(LayoutKind.Sequential)]
-        private struct KeyboardInput
+        internal struct KeyboardInput
         {
             public ushort virtualKey, scanCode;
             public uint flags, time;
             public UIntPtr extraInfo;
         }
         [StructLayout(LayoutKind.Sequential)]
-        private struct MouseInput
+        internal struct MouseInput
         {
             public int x, y;
             public uint mouseData, flags, time;
             public UIntPtr extraInfo;
         }
         [StructLayout(LayoutKind.Explicit)]
-        private struct InputUnion
+        internal struct InputUnion
         {
             [FieldOffset(0)] public KeyboardInput keyboard;
             [FieldOffset(0)] public MouseInput mouse;
         }
         [StructLayout(LayoutKind.Sequential)]
-        private struct Input
+        internal struct Input
         {
             public uint type;
             public InputUnion data;
@@ -90,25 +128,14 @@ namespace TapBoard
             return input;
         }
 
-        private static Input[] BuildKeyInputs(KeyInputEventArgs args,
-            bool physicalShift, bool physicalControl, bool physicalAlt)
+        private static Input[] BuildKeyInputs(KeyInputEventArgs args)
         {
             bool extended;
             ushort key = GetVirtualKey(args.key, out extended);
             if (key == 0) return new Input[0];
-            var inputs = new System.Collections.Generic.List<Input>();
-            bool shift = args.shift && !physicalShift;
-            bool control = args.control && !physicalControl;
-            bool alt = args.alt && !physicalAlt;
-            if (shift) inputs.Add(MakeKeyInput(0x10, false, false));
-            if (control) inputs.Add(MakeKeyInput(0x11, false, false));
-            if (alt) inputs.Add(MakeKeyInput(0x12, false, false));
-            inputs.Add(MakeKeyInput(key, false, extended));
-            inputs.Add(MakeKeyInput(key, true, extended));
-            if (alt) inputs.Add(MakeKeyInput(0x12, true, false));
-            if (control) inputs.Add(MakeKeyInput(0x11, true, false));
-            if (shift) inputs.Add(MakeKeyInput(0x10, true, false));
-            return inputs.ToArray();
+            // Shift/Ctrl/Alt are already held by contact lifetime. Emitting their
+            // UP here would dismiss Alt+Tab after every Tab/arrow keystroke.
+            return new[] { MakeKeyInput(key, false, extended), MakeKeyInput(key, true, extended) };
         }
 
         private static ushort GetVirtualKey(string code, out bool extended)
@@ -150,6 +177,8 @@ namespace TapBoard
                 case "{BKSP}": return 0x08;
                 case "{ENTER}": return 0x0D;
                 case "{DEL}": extended = true; return 0x2E;
+                case "{HANGUL}": return 0x15;
+                case "{HANJA}": return 0x19;
                 case "{LEFT}": extended = true; return 0x25;
                 case "{UP}": extended = true; return 0x26;
                 case "{RIGHT}": extended = true; return 0x27;
@@ -158,11 +187,19 @@ namespace TapBoard
             }
         }
 
-        private static void SendVirtualKey(ushort key, bool keyUp, bool extended)
+        private bool SendVirtualKey(ushort key, bool keyUp, bool extended)
         {
             Input input = MakeKeyInput(key, keyUp, extended);
-            if (SendInput(1, new[] { input }, Marshal.SizeOf(typeof(Input))) != 1)
-                Debug.WriteLine("SendInput failed: " + Marshal.GetLastWin32Error());
+            return sendInputs(new[] { input }) == 1;
+        }
+        private uint SendNativeInputs(Input[] inputs)
+        {
+            IntPtr foreground = GetForegroundWindow();
+            uint sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Input)));
+            int error = sent == inputs.Length ? 0 : Marshal.GetLastWin32Error();
+            Diagnostics?.TraceDelivery(sent, inputs.Length, error, foreground);
+            if (sent != inputs.Length) Debug.WriteLine("SendInput failed: " + error);
+            return sent;
         }
 
     }

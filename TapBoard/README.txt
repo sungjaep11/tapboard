@@ -14,11 +14,20 @@ Character and space keys commit on release only when the contact is at least
 10 ms and shorter than 300 ms and its release displacement is less than 60 pixels. Resting
 contacts do not type. Backspace and arrow keys activate immediately and repeat
 while held. Hold Shift, Ctrl, Alt or Win while tapping another key.
+Shift/Ctrl/Alt now stay down in Windows for the lifetime of the touch, as Win
+already does. Hold Alt and tap Tab repeatedly, use Shift+Tab or the arrows,
+then lift Alt to commit the selected window. Tab remains a brief-release tap;
+holding Tab does not repeat. Releasing one of two Shift/Ctrl keys, or one of
+multiple fingers on a modifier, keeps it held until the last contact lifts.
+Native holds are released on input lock, layout reset, touch-window destruction
+and normal exit, not on foreground-window changes. Modifiers already held on
+a physical keyboard are not acquired or released by TapBoard; if that hold
+ends, TapBoard acquires its own hold before the next ordinary key.
 
 At most two distinct non-modifier keys may be touched. Shift, Ctrl, Alt and
 Win contacts are tracked separately and do not consume this limit, allowing
 shortcuts such as Ctrl+Shift+arrow. A third non-modifier key cancels pending
-taps, stops repeats, releases Win, and locks the keyboard.
+taps, stops repeats, releases all injected modifiers, and locks the keyboard.
 All key contacts, including modifiers, must lift before typing resumes.
 Multiple contacts on the same key count as one key; blank-area contacts do
 not count. Every down in a native packet is checked before any up commits.
@@ -113,7 +122,7 @@ to the renderer and are disposed with the control.
 KeyboardSettings.cs: validated, immutable startup configuration.
 KeyboardEvents.cs: shared input contracts without UI dependencies.
 WindowsTouchInput.cs: native TOUCHINPUT layout, flags and API boundary.
-WindowsKeyboardOutput.cs: native key sequences and held-Win cleanup.
+WindowsKeyboardOutput.cs: native target-key sequences and held-modifier ownership/cleanup.
 TouchMouseFilter.cs / TouchGestureSettings.cs: mouse and gesture isolation.
 ImeStateReader.cs / DisplayGeometry.cs: target language and screen calibration.
 ClickFeedback.cs / ClickMixer.cs: WASAPI lifecycle / pure sound synthesis.
@@ -137,3 +146,12 @@ Use -NativeAudio for a silent WASAPI start/stop check and -NativeLifecycle for
 native mouse-hook lifecycle checks. Layout checks generate preview images.
 Synthetic contact tests verify algorithms; actual feel and driver behavior
 must also be checked on the ASUS touchscreen.
+
+Held-modifier regression check (Windows or macOS with the .NET 10 SDK):
+dotnet run --project tools/HeldModifierCheck/HeldModifierCheck.csproj
+Runs the real controller and output policy with a simulated native boundary;
+checks Alt+Tab/Shift+Tab/arrows, shared contacts, cleanup, physical keys already
+held at touch-down, and failed injection. It does not inject real OS keys.
+On Windows also check the actual switcher: hold Alt, tap Tab twice, add Shift
+and tap Tab, release Shift, use arrows, then release Alt to select the window.
+Check Ctrl+Shift+arrows and that releasing/closing TapBoard leaves no stuck keys.

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../TapBoard/Key.cs" />
+    <Compile Include="../../TapBoard/KeyDefinition.cs" />
+    <Compile Include="../../TapBoard/KeyState.cs" />
+    <Compile Include="../../TapBoard/Stroke.cs" />
+    <Compile Include="../../TapBoard/RepeatSchedule.cs" />
+    <Compile Include="../../TapBoard/KeyboardLayout.cs" />
+    <Compile Include="../../TapBoard/KeyboardTheme.cs" />
+    <Compile Include="../../TapBoard/KeyboardEvents.cs" />
+    <Compile Include="../../TapBoard/KeyboardSettings.cs" />
+    <Compile Include="../../TapBoard/KeyboardInputController.cs" />
+    <Compile Include="../../TapBoard/TouchDiagnostics.cs" />
+    <Compile Include="../../TapBoard/TouchExperimentLog.cs" />
+    <Compile Include="../../TapBoard/WindowsKeyboardOutput.cs" />
+    <Compile Include="Program.cs" />
+    <Reference Include="System.Configuration.ConfigurationManager">
+      <HintPath>$(MSBuildBinPath)/System.Configuration.ConfigurationManager.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

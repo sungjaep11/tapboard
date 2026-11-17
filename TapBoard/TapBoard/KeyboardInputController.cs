@@ -63,6 +63,7 @@ namespace TapBoard
             inputLocked = true;
             bool releaseWindows = windowsKey != null && windowsKey.IsActive();
             foreach (Key key in keys) key.CancelContact();
+            ModifiersChanged?.Invoke(false, false, false);
             if (releaseWindows) CreateKeyInputEvent("{WIN_UP}", false, false);
             TraceTouch("LOCK", id, x, y, "active-key-limit-exceeded");
             StateChanged?.Invoke();
@@ -76,6 +77,7 @@ namespace TapBoard
         private Key windowsKey = null;
         internal readonly TouchDiagnostics Diagnostics = new TouchDiagnostics();
         internal event Action StateChanged;
+        internal event Action<bool, bool, bool> ModifiersChanged;
         internal bool IsLocked { get { return inputLocked; } }
         internal Key GetContactKey(int id)
         {
@@ -124,7 +126,16 @@ namespace TapBoard
                 return;
             }
             bool windowsWasActive = windowsKey != null && windowsKey.IsActive();
-            if (key != null && key.OnKeyAreaEvent(e, pointID, x, y))
+            bool shiftWasActive = IsShiftKeyOn(), controlWasActive = IsControlKeyOn();
+            bool altWasActive = alt != null && alt.IsActive();
+            bool accepted = key != null && key.OnKeyAreaEvent(e, pointID, x, y);
+            bool shiftIsActive = IsShiftKeyOn(), controlIsActive = IsControlKeyOn();
+            bool altIsActive = alt != null && alt.IsActive();
+            // Native modifier transitions follow contact lifetime, independently
+            // of the ordinary key's release/tap decision and repeat schedule.
+            if (shiftWasActive != shiftIsActive || controlWasActive != controlIsActive || altWasActive != altIsActive)
+                ModifiersChanged?.Invoke(shiftIsActive, controlIsActive, altIsActive);
+            if (accepted)
             {
                 bool shift = IsShiftKeyOn(), control = IsControlKeyOn();
                 bool allowed = key.Definition.type != Key.TYPE.TAPPER ||
@@ -195,16 +206,21 @@ namespace TapBoard
             alt = layout.Alt;
             windowsKey = layout.Windows;
         }
-        private void Reset()
+        internal void CancelContacts()
         {
-            // Rebuilding the layout must not leave a Windows key logically held.
+            // Contact loss, layout changes and shutdown must release native holds.
             if (windowsKey != null && windowsKey.IsActive())
                 CreateKeyInputEvent("{WIN_UP}", false, false);
             foreach (Key key in keys) key.CancelContact();
+            ModifiersChanged?.Invoke(false, false, false);
             keyContacts.Clear();
             modifierContacts.Clear();
             lastTapKey = null;
             inputLocked = false;
+        }
+        private void Reset()
+        {
+            CancelContacts();
             keys.Clear();
         }
     }

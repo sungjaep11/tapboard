@@ -120,28 +120,27 @@ try {
     'PASS: native input structure size.'
     $keyboardType = $assembly.GetType('TapBoard.WindowsKeyboardOutput')
     $buildInput = $keyboardType.GetMethod('BuildKeyInputs', [Reflection.BindingFlags]'NonPublic,Static')
-    function InputSequence($code, $shift, $control, $alt, $physicalShift, $physicalControl, $physicalAlt) {
+    function InputSequence($code, $shift, $control, $alt) {
         $keyArgs = New-Object TapBoard.KeyInputEventArgs
         $keyArgs.key = $code
         $keyArgs.shift = $shift
         $keyArgs.control = $control
         $keyArgs.alt = $alt
-        $inputs = $buildInput.Invoke($null, @($keyArgs.PSObject.BaseObject, $physicalShift, $physicalControl, $physicalAlt))
+        $inputs = $buildInput.Invoke($null, @($keyArgs.PSObject.BaseObject))
         ($inputs | ForEach-Object { '{0:X2}:{1}' -f $_.data.keyboard.virtualKey, $_.data.keyboard.flags }) -join ','
     }
-    Check ((InputSequence '{CAPSLOCK}' $false $false $false $false $false $false) -eq '14:0,14:2') 'Caps Lock is not a single native press/release'
-    Check ((InputSequence '{a}' $false $false $false $false $false $false) -eq '41:0,41:2') 'Letter input forces a character case'
-    Check ((InputSequence '{a}' $true $false $false $false $false $false) -eq '10:0,41:0,41:2,10:2') 'Shift-letter events differ'
-    Check ((InputSequence '{a}' $false $true $false $false $false $false) -eq '11:0,41:0,41:2,11:2') 'Ctrl shortcut events differ'
-    Check ((InputSequence '{F4}' $false $false $true $false $false $false) -eq '12:0,73:0,73:2,12:2') 'Alt shortcut events differ'
-    Check ((InputSequence '{a}' $true $true $true $true $true $true) -eq '41:0,41:2') 'Input releases a physically held modifier'
-    Check ((InputSequence '{LEFT}' $false $false $false $false $false $false) -eq '25:1,25:3') 'Arrow input is not extended'
+    Check ((InputSequence '{CAPSLOCK}' $false $false $false) -eq '14:0,14:2') 'Caps Lock is not a single native press/release'
+    Check ((InputSequence '{a}' $false $false $false) -eq '41:0,41:2') 'Letter input forces a character case'
+    Check ((InputSequence '{a}' $true $false $false) -eq '41:0,41:2') 'Target sequence changes the held Shift state'
+    Check ((InputSequence '{a}' $false $true $false) -eq '41:0,41:2') 'Target sequence changes the held Ctrl state'
+    Check ((InputSequence '{F4}' $false $false $true) -eq '73:0,73:2') 'Target sequence changes the held Alt state'
+    Check ((InputSequence '{LEFT}' $false $false $false) -eq '25:1,25:3') 'Arrow input is not extended'
     foreach ($key in @($keyField.GetValue($controller))) {
         $code = $key.GetName()
         if ($code -and $code -notin @('{APP_EXIT}', '{HANGUL}', '{HANJA}')) {
-            Check ((InputSequence $code $false $false $false $false $false $false).Length -gt 0) ('Unmapped key: ' + $code)
+            Check ((InputSequence $code $false $false $false).Length -gt 0) ('Unmapped key: ' + $code)
         }
     }
-    'PASS: native Caps Lock, case-neutral letters, Shift/Ctrl/Alt shortcuts, physical modifier preservation, and every layout key mapping.'
+    'PASS: native Caps Lock, case-neutral letters, target-only sequences with held modifiers, and every layout key mapping.'
 } finally { $area.Dispose() }
 

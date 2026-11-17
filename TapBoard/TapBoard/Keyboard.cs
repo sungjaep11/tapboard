@@ -55,6 +55,7 @@ namespace TapBoard
         {
             InitializeComponent();
             keyboardOutput.Diagnostics = keyArea.Diagnostics;
+            keyArea.ModifiersChanged += keyboardOutput.SetModifiers;
             keyArea.KeyTouched += () =>
             {
                 if (KeyboardSettings.Current.TouchSoundEnabled) clickFeedback?.RequestTouch();

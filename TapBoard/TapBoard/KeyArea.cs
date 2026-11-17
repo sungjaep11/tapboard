@@ -49,6 +49,7 @@ namespace TapBoard
         internal void SaveTouchTrace(bool final = false) { input.Diagnostics.SaveTouchTrace(final); }
         public delegate void KeyInputEventHandler(object sender, KeyInputEventArgs args);
         public event KeyInputEventHandler KeyInput;
+        internal event Action<bool, bool, bool> ModifiersChanged;
         private void ProcessTouchInputs(WindowsTouchInput.NativeTouch[] inputs)
         {
             // Inspect every new contact first: a third non-modifier key down
@@ -104,6 +105,9 @@ namespace TapBoard
 
         protected override void OnHandleDestroyed(EventArgs e)
         {
+            input.CancelContacts();
+            primaryTouchId = null;
+            PrimaryTouchChanged?.Invoke(false);
             if (IsHandleCreated)
             {
                 WindowsTouchInput.UnregisterTouchWindow(Handle);
@@ -149,6 +153,7 @@ namespace TapBoard
         public KeyArea()
         {
             input.KeyInput += (sender, args) => KeyInput?.Invoke(this, args);
+            input.ModifiersChanged += (shift, control, alt) => ModifiersChanged?.Invoke(shift, control, alt);
             input.StateChanged += InvalidateKeyboard;
             Diagnostics.StartExperiment();
 
@@ -169,6 +174,7 @@ namespace TapBoard
         {
             if (disposing)
             {
+                input.CancelContacts();
                 autoRepeatTimer.Dispose();
                 renderer.Dispose();
                 SaveTouchTrace(true);
