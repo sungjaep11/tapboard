@@ -12,6 +12,8 @@ namespace TapBoard
         private readonly Dictionary<int, Key> keyContacts = new Dictionary<int, Key>();
         // Modifiers keep contact ownership but do not consume ordinary-key slots.
         private readonly Dictionary<int, Key> modifierContacts = new Dictionary<int, Key>();
+        // One snapshot per finger, including overlapping taps of the same character.
+        private readonly Dictionary<int, bool> characterShiftAtDown = new Dictionary<int, bool>();
         private bool inputLocked;
         private readonly Func<double> clock;
         private readonly int sameKeyMinIntervalMs;
@@ -61,6 +63,7 @@ namespace TapBoard
             // Cancel before processing releases in the native packet. Once
             // locked, every tracked contact (including modifiers) must lift.
             inputLocked = true;
+            characterShiftAtDown.Clear();
             bool releaseWindows = windowsKey != null && windowsKey.IsActive();
             foreach (Key key in keys) key.CancelContact();
             ModifiersChanged?.Invoke(false, false, false);
@@ -135,9 +138,22 @@ namespace TapBoard
             // of the ordinary key's release/tap decision and repeat schedule.
             if (shiftWasActive != shiftIsActive || controlWasActive != controlIsActive || altWasActive != altIsActive)
                 ModifiersChanged?.Invoke(shiftIsActive, controlIsActive, altIsActive);
+            bool shift = shiftIsActive;
+            // Only character keys have a shifted label. Remember Shift for
+            // each pending tap, and discard the snapshot even on a rejected up.
+            if (key != null && key.Definition.label2 != null)
+            {
+                if (e == KeyAreaEvent.TOUCH && !characterShiftAtDown.ContainsKey(pointID))
+                    characterShiftAtDown.Add(pointID, shift);
+                else if (e == KeyAreaEvent.RELEASE)
+                {
+                    characterShiftAtDown.TryGetValue(pointID, out shift);
+                    characterShiftAtDown.Remove(pointID);
+                }
+            }
             if (accepted)
             {
-                bool shift = IsShiftKeyOn(), control = IsControlKeyOn();
+                bool control = controlIsActive;
                 bool allowed = key.Definition.type != Key.TYPE.TAPPER ||
                     AllowTap(key, shift, control, alt != null && alt.IsActive());
                 if (allowed)
@@ -213,6 +229,7 @@ namespace TapBoard
                 CreateKeyInputEvent("{WIN_UP}", false, false);
             foreach (Key key in keys) key.CancelContact();
             ModifiersChanged?.Invoke(false, false, false);
+            characterShiftAtDown.Clear();
             keyContacts.Clear();
             modifierContacts.Clear();
             lastTapKey = null;

@@ -12,7 +12,9 @@ INPUT BEHAVIOR
 
 Character and space keys commit on release only when the contact is at least
 10 ms and shorter than 300 ms and its release displacement is less than 60 pixels. Resting
-contacts do not type. Backspace and arrow keys activate immediately, wait 450 ms
+contacts do not type. Letters, digits and punctuation remember the on-screen
+Shift state at touch-down, even if Shift changes before the character lifts.
+Backspace and arrow keys activate immediately, wait 450 ms
 before the first repeat, then repeat every 100 ms while held. Release stops
 repeating without another input. Hold Shift, Ctrl, Alt or Win while tapping another key.
 Shift/Ctrl/Alt now stay down in Windows for the lifetime of the touch, as Win

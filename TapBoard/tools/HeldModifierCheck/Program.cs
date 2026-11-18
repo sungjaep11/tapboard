@@ -250,9 +250,35 @@ internal static class Program
             r.Tap("한/영", 1); r.Tap("한자", 2); r.Tap("Caps Lock", 3);
             r.Expect("15:0,15:2,19:0,19:2,14:0,14:2");
             r.Down("Shift", 4); r.Down("a", 5); r.Up("Shift", 4); r.Up("a", 5);
-            r.Expect("10:0,10:2,41:0,41:2"); // Modifier sampled at tap commit, as before.
+            r.Tap("b", 6);
+            r.Expect("10:0,10:2,10:0,41:0,41:2,10:2,42:0,42:2");
             Check(r.Key("Tab").Definition.type == Key.TYPE.TAPPER, "Tab repeat policy changed");
+
+            // Two contacts on the same character start on opposite sides of
+            // a Shift down. Release the older tap first while Shift is held.
+            r.Down("a", 7); r.Down("Shift", 8); r.Down("a", 9);
+            r.Up("a", 7); r.Up("a", 9); r.Up("Shift", 8);
+            r.Expect("10:0,10:2,41:0,41:2,10:0,41:0,41:2,10:2");
+
+            // A rejected swipe must consume its own snapshot. Reuse its ID.
+            r.Down("Shift", 10); r.Down("1", 11); r.Up("Shift", 10);
+            r.Controller.DistributeEvent(KeyAreaEvent.RELEASE, 11, -100, -100);
+            r.Tap("1", 11);
+            r.Expect("10:0,10:2,31:0,31:2");
+
+            // Borrow physical Shift without releasing it after the character.
+            r.Physical.Add(0x10);
+            r.Down("Shift", 12); r.Down("q", 13); r.Up("Shift", 12); r.Up("q", 13);
+            r.Expect("51:0,51:2");
+            r.Physical.Clear();
+
+            // A failed character send still releases the temporary Shift.
+            r.Down("Shift", 14); r.Down("a", 15); r.Up("Shift", 14);
+            r.Delivery = inputs => inputs.Length == 2 ? 0u : (uint)inputs.Length;
+            r.Up("a", 15);
+            r.Expect("10:0,10:2,10:0,10:2");
+            Check(r.Injected.Count == 0, "Temporary Shift remained after failed character");
         }
-        Console.WriteLine("PASS: IME/Caps Lock, release-time Shift semantics and unchanged Tab tap policy.");
+        Console.WriteLine("PASS: IME/Caps Lock, character Shift at touch-down, overlapping taps and temporary Shift cleanup.");
     }
 }

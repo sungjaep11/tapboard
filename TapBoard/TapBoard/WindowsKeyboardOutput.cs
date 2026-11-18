@@ -33,13 +33,13 @@ namespace TapBoard
             wantShift = shift;
             wantControl = control;
             wantAlt = alt;
-            SynchronizeModifiers();
+            SynchronizeModifiers(wantShift);
         }
-        private bool SynchronizeModifiers()
+        private bool SynchronizeModifiers(bool shift)
         {
             // Keep injected ownership separate from GetAsyncKeyState: that API
             // includes our own injected downs, not just physical keyboard input.
-            bool ready = SetHeldKey(0x10, wantShift, ref shiftDown);
+            bool ready = SetHeldKey(0x10, shift, ref shiftDown);
             ready &= SetHeldKey(0x11, wantControl, ref controlDown);
             ready &= SetHeldKey(0x12, wantAlt, ref altDown);
             return ready;
@@ -70,18 +70,27 @@ namespace TapBoard
             if (args.key.Length == 0) return false;
             // Retry failed transitions (or acquire a formerly physical hold)
             // before sending a target key. Never turn a failed shortcut into text.
-            if (!SynchronizeModifiers()) return false;
             Input[] inputs = BuildKeyInputs(args);
             if (inputs.Length == 0) return false;
-            uint sent = sendInputs(inputs);
-            if (sent == 1) SendVirtualKey(inputs[0].data.keyboard.virtualKey, true,
-                (inputs[0].data.keyboard.flags & ExtendedKey) != 0);
-            return sent == inputs.Length;
+            try
+            {
+                if (!SynchronizeModifiers(args.shift)) return false;
+                uint sent = sendInputs(inputs);
+                if (sent == 1) SendVirtualKey(inputs[0].data.keyboard.virtualKey, true,
+                    (inputs[0].data.keyboard.flags & ExtendedKey) != 0);
+                return sent == inputs.Length;
+            }
+            finally
+            {
+                // A character can outlive its original Shift contact, or a new
+                // Shift contact can begin while the character is still pending.
+                if (args.shift != wantShift) SetHeldKey(0x10, wantShift, ref shiftDown);
+            }
         }
         public void Dispose()
         {
             wantShift = wantControl = wantAlt = false;
-            SynchronizeModifiers();
+            SynchronizeModifiers(wantShift);
             SetHeldKey(0x5B, false, ref windowsKeyDown, true);
             disposed = true;
         }
