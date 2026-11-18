@@ -4,9 +4,28 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Tapboard+ 타이핑 실험 및 이벤트 기록 도구"><title>Tapboard+ · Typing lab</title>
 <style>:root{--bg:#f5f6f8;--ink:#202b32;--muted:#7c868e;--border:#e5e9ec;--teal:#087f75;--pale:#eef8f5;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}button,input,select,textarea{font:inherit}button,a,input,select,textarea,summary{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{cursor:default;opacity:.42}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #55b6aa;outline-offset:3px}a{color:inherit;text-decoration:none}.topbar{height:78px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%}.brand{display:flex;align-items:center;font-size:24px;font-weight:750;letter-spacing:-1px}.brand-icon{background:var(--teal);color:white;border-radius:9px;width:33px;height:33px;display:grid;place-content:center;font-size:27px;position:relative;margin-right:12px}.brand-icon span{font-size:15px;position:absolute;right:4px;top:1px}.brand-plus{color:var(--teal)}.lab-label{font-size:10px;font-weight:600;letter-spacing:2px;color:#829097;border-left:1px solid var(--border);margin-left:22px;padding-left:22px}.local-tag{font-size:12px;color:#5f7172;display:flex;align-items:center;gap:8px}.local-tag i,.tiny-dot{width:6px;height:6px;border-radius:50%;background:#8ea7a1;display:inline-block}main{max-width:1376px;padding:43px 40px 20px;margin:auto}.heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:31px}.eyebrow{font:10px var(--mono);letter-spacing:1.8px;color:var(--teal);margin-bottom:13px}h1{font-size:30px;font-weight:650;letter-spacing:-1.1px;margin:0 0 10px}.heading p{margin:0;color:var(--muted);font-size:13px}.button{border:1px solid transparent;border-radius:7px;padding:12px 18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:10px;justify-content:center;transition:background .15s}.button:hover:not(:disabled){filter:brightness(.96)}.secondary{background:white;border-color:#dce3e5;color:#3e515a}.button span{font:10px var(--mono);color:inherit}.primary{background:var(--teal);color:white}.dark{background:#25383e;color:white}.small{font-size:11px;padding:9px 12px}.workspace{display:grid;grid-template-columns:288px minmax(0,1fr);gap:22px}.panel{border:1px solid var(--border);background:#fff;border-radius:12px;box-shadow:0 3px 8px #223b4c03}.setup{padding:24px}.section-title{display:flex;align-items:center;gap:10px}h2{font-size:14px;font-weight:650;margin:0}.step{font:10px var(--mono);color:#829097;background:#f3f5f6;padding:5px;border-radius:4px}.small-label{font:9px var(--mono);letter-spacing:1.2px;color:#a0a9ad;margin-left:auto}fieldset{border:0;padding:0;margin:23px 0 0;min-width:0}label{display:block;font-size:11px;color:#5e6c74;margin:16px 0 7px}fieldset>label:first-of-type{margin-top:0}label span{color:#a1aaaf;font-weight:400;font-size:10px;margin-left:2px}input,select,textarea{width:100%;border:1px solid #e0e6e8;border-radius:6px;background:#fafbfc;color:#33454e;padding:10px;outline:none;font-size:12px}input:focus,select:focus,textarea:focus{border-color:#48a89c;box-shadow:0 0 0 3px #0583730a}select{height:37px}textarea{resize:vertical;line-height:1.6}fieldset:disabled{opacity:.6}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setup-foot{display:flex;gap:8px;border-top:1px solid #edf0f2;margin-top:21px;padding-top:17px;align-items:flex-start}.setup-foot .tiny-dot{margin-top:6px}.setup-foot p{font-size:10px;line-height:1.8;color:#89949b;margin:0}.typing-panel{padding:26px 30px;display:flex;flex-direction:column}.state{margin-left:auto;background:#f0f3f5;color:#72818b;font-size:10px;padding:6px 10px;border-radius:20px}.state.active{background:#e4f6ed;color:#087f75}.session-meta{display:flex;gap:17px;align-items:center;margin-top:29px;font:10px var(--mono);letter-spacing:1px;color:#91a0a6}.session-meta>span:first-child{color:#596f77}.text-button{background:none;border:0;padding:4px 0;color:#268679;font-size:11px}.session-meta .text-button{margin-left:auto}.cue{display:flex;align-items:center;gap:13px;background:var(--pale);border:1px solid #dfeee8;border-radius:7px;padding:17px;margin:16px 0 25px;min-height:75px}.cue>span:first-child{background:white;border:1px solid #d3e9e3;border-radius:7px;width:34px;height:34px;display:grid;place-content:center;color:var(--teal);font-size:20px}.cue strong{font-size:13px;color:#23685e;font-weight:600}.cue p{font-size:11px;color:#729086;margin:6px 0 0}.cue.resting{background:#fff8ed;border-color:#f2e6ce}.cue.resting strong{color:#9a6e29}#countdown{margin-left:auto;font:26px var(--mono);color:var(--teal)}.prompt-label{display:flex;justify-content:space-between;font-size:11px;color:#8b979d;margin-bottom:15px}.prompt-label span{font:11px var(--mono)}.prompt{font:25px/1.7 var(--mono);letter-spacing:-.5px;min-height:85px;white-space:pre-wrap;overflow-wrap:anywhere;color:#66767e}.prompt .correct{color:#008775}.prompt .incorrect{background:#fff0ee;color:#c45b52;border-radius:2px}.prompt .cursor{border-bottom:2px solid #15a18d}.progress-track{height:3px;background:#f1f4f5;margin:14px 0 21px}.progress-track div{height:100%;width:0;background:#32a28e;transition:width .1s}.typing{font:19px/1.8 var(--mono);padding:18px;background:#fbfcfd;min-height:125px;resize:vertical}.typing::placeholder{font:12px/2 sans-serif;color:#acb4b9}.typing:disabled{background:#f8fafb;color:#73838a}.input-caption{display:flex;justify-content:space-between;font-size:9px;color:#9ba5ab;margin:10px 0 27px;gap:10px}.controls{display:flex;gap:10px;margin-top:auto}.controls .muted{margin-left:auto;color:#98a2a8}.recording-line{border-top:1px solid #edf1f2;margin-top:22px;padding-top:17px;font-size:10px;color:#9aa5ab;display:flex;align-items:center;gap:7px}.recording-line>span:last-child{margin-left:auto;font:12px var(--mono);color:#6e8089}.live-dot{background:#0d9986;box-shadow:0 0 0 3px #0d998614}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:22px 0}.metric{padding:21px 22px;border:1px solid var(--border);border-radius:10px;background:white}.metric>div{font-size:11px;color:#6f7e85;display:flex;justify-content:space-between;gap:6px}.metric>div span{font:9px var(--mono);color:#a0adb3}.metric strong{display:block;font:32px var(--mono);letter-spacing:-1px;margin:15px 0 10px}.metric:first-child strong{color:var(--teal)}.metric small{font-size:9px;color:#9ca7ad}.results{padding:23px 25px}.results-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:21px}.count{font:10px var(--mono);background:#eff4f3;color:var(--teal);border-radius:4px;padding:3px 6px}.export-buttons{display:flex;gap:8px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:11px}th{background:#f8fafb;padding:12px;color:#93a0a7;font-weight:500;border-block:1px solid #edf1f3}td{border-bottom:1px solid #eff2f3;padding:14px 12px;color:#52666e}td.numeric{font-family:var(--mono)}td small{color:#97a3a8;margin-left:5px}.empty{padding:36px 15px;text-align:center;color:#85969e}.empty>span{display:block;font-size:29px;color:#b5c7c9;margin-bottom:10px}.empty strong{font-size:12px;font-weight:500}.empty p{font-size:10px;color:#a4afb4;margin:9px 0}.guide{margin:25px 0;background:#edf1f3;border-radius:8px;padding:16px 20px;color:#70838d}.guide summary{cursor:pointer;font-size:11px;list-style:none;display:flex;justify-content:space-between}.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px 35px;padding:10px 0}.guide h3{font-size:12px;font-weight:600}.guide p{font-size:11px;line-height:1.9;color:#7d8c93}footer{display:flex;justify-content:space-between;font-size:10px;color:#abb5ba;padding:7px 0 15px}footer b{font-size:8px;font-weight:500;letter-spacing:1px;margin-left:13px}.notice{padding:14px 18px;border:1px solid #ebdcb5;background:#fff7e6;color:#906924;border-radius:8px;margin-bottom:20px;font-size:12px}.sr-only{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}dialog{border:1px solid #dce5e7;border-radius:14px;max-width:800px;width:90%;max-height:85vh;padding:26px;color:var(--ink)}dialog::backdrop{background:#10272d70;backdrop-filter:blur(3px)}.dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 25px}.detail-grid>div{padding:10px 0;display:flex;justify-content:space-between;border-bottom:1px solid #edf0f1;font-size:12px}.detail-grid b{font:12px var(--mono)}.detail-text{background:#f4f7f8;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 var(--mono)}.muted-text{font-size:11px;line-height:1.8;color:#839199}[hidden]{display:none!important}
-@media(min-width:1500px){main{padding-top:54px}}@media(max-width:1050px){main{padding:30px 22px}.workspace{grid-template-columns:250px minmax(0,1fr);gap:16px}.typing-panel{padding:24px}.metric{padding:18px 14px}.metric>div{font-size:10px}.metric small{font-size:8px}.prompt{font-size:22px}.input-caption{flex-wrap:wrap}.controls{gap:6px}.controls .button{padding:12px}}
-@media(max-width:760px){.topbar{height:65px;padding:0 20px}.lab-label{display:none}.local-tag{font-size:10px}.heading{align-items:flex-start;gap:15px}h1{font-size:23px}.heading>.button{font-size:0;padding:11px}.heading>.button span{font-size:11px}.heading p{font-size:11px}.workspace{grid-template-columns:1fr}.setup{padding:20px}.setup fieldset{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}.setup fieldset>label{grid-column:1/-1;margin:7px 0 0}.setup fieldset>input,.setup fieldset>select,.setup fieldset>textarea,#customWrap,.setup fieldset>.field-row{grid-column:1/-1}.setup-foot{display:none}.typing-panel{padding:22px}.metrics{grid-template-columns:repeat(2,1fr)}.metric:last-child{grid-column:1/-1}.metric strong{font-size:28px}.results{padding:20px 15px}.results-head{align-items:flex-start;gap:20px}.export-buttons{flex-direction:column}.guide-grid{grid-template-columns:1fr}.prompt{font-size:22px}.controls{flex-wrap:wrap}.controls .muted{margin-left:0}.detail-grid{grid-template-columns:1fr}footer>span:last-child{display:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif}button,input,select,textarea{font:inherit}button,a,input,select,textarea,summary{ -webkit-tap-highlight-color:transparent}button{cursor:pointer}button:disabled{cursor:default;opacity:.42}button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid #55b6aa;outline-offset:3px}a{color:inherit;text-decoration:none}.topbar{height:78px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 5%}.brand{display:flex;align-items:center;font-size:24px;font-weight:750;letter-spacing:-1px}.brand-icon{background:var(--teal);color:white;border-radius:9px;width:33px;height:33px;display:grid;place-content:center;font-size:27px;position:relative;margin-right:12px}.brand-icon span{font-size:15px;position:absolute;right:4px;top:1px}.brand-plus{color:var(--teal)}.lab-label{font-size:10px;font-weight:600;letter-spacing:2px;color:#829097;border-left:1px solid var(--border);margin-left:22px;padding-left:22px}.local-tag{font-size:12px;color:#5f7172;display:flex;align-items:center;gap:8px}.local-tag i,.tiny-dot{width:6px;height:6px;border-radius:50%;background:#8ea7a1;display:inline-block}main{max-width:1376px;padding:43px 40px 20px;margin:auto}.heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:31px}.eyebrow{font:10px var(--mono);letter-spacing:1.8px;color:var(--teal);margin-bottom:13px}h1{font-size:30px;font-weight:650;letter-spacing:-1.1px;margin:0 0 10px}.heading p{margin:0;color:var(--muted);font-size:13px}.button{border:1px solid transparent;border-radius:7px;padding:12px 18px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:10px;justify-content:center;transition:background .15s}.button:hover:not(:disabled){filter:brightness(.96)}.secondary{background:white;border-color:#dce3e5;color:#3e515a}.button span{font:10px var(--mono);color:inherit}.primary{background:var(--teal);color:white}.dark{background:#25383e;color:white}.small{font-size:11px;padding:9px 12px}.workspace{display:grid;grid-template-columns:288px minmax(0,1fr);gap:22px}.panel{border:1px solid var(--border);background:#fff;border-radius:12px;box-shadow:0 3px 8px #223b4c03}.setup{padding:24px}.section-title{display:flex;align-items:center;gap:10px}h2{font-size:14px;font-weight:650;margin:0}.step{font:10px var(--mono);color:#829097;background:#f3f5f6;padding:5px;border-radius:4px}.small-label{font:9px var(--mono);letter-spacing:1.2px;color:#a0a9ad;margin-left:auto}fieldset{border:0;padding:0;margin:23px 0 0;min-width:0}label{display:block;font-size:11px;color:#5e6c74;margin:16px 0 7px}fieldset>label:first-of-type{margin-top:0}fieldset label span{color:#a1aaaf;font-weight:400;font-size:10px;margin-left:2px}input,select,textarea{width:100%;border:1px solid #e0e6e8;border-radius:6px;background:#fafbfc;color:#33454e;padding:10px;outline:none;font-size:12px}input:focus,select:focus,textarea:focus{border-color:#48a89c;box-shadow:0 0 0 3px #0583730a}select{height:37px}textarea{resize:vertical;line-height:1.6}fieldset:disabled{opacity:.6}.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.setup-foot{display:flex;gap:8px;border-top:1px solid #edf0f2;margin-top:21px;padding-top:17px;align-items:flex-start}.setup-foot .tiny-dot{margin-top:6px}.setup-foot p{font-size:10px;line-height:1.8;color:#89949b;margin:0}.typing-panel{padding:26px 30px;display:flex;flex-direction:column}.state{margin-left:auto;background:#f0f3f5;color:#72818b;font-size:10px;padding:6px 10px;border-radius:20px}.state.active{background:#e4f6ed;color:#087f75}.session-meta{display:flex;gap:17px;align-items:center;margin-top:29px;font:10px var(--mono);letter-spacing:1px;color:#91a0a6}.session-meta>span:first-child{color:#596f77}.text-button{background:none;border:0;padding:4px 0;color:#268679;font-size:11px}.session-meta .text-button{margin-left:auto}.cue{display:flex;align-items:center;gap:13px;background:var(--pale);border:1px solid #dfeee8;border-radius:7px;padding:17px;margin:16px 0 25px;min-height:75px}.cue>span:first-child{background:white;border:1px solid #d3e9e3;border-radius:7px;width:34px;height:34px;display:grid;place-content:center;color:var(--teal);font-size:20px}.cue strong{font-size:13px;color:#23685e;font-weight:600}.cue p{font-size:11px;color:#729086;margin:6px 0 0}.cue.resting{background:#fff8ed;border-color:#f2e6ce}.cue.resting strong{color:#9a6e29}#countdown{margin-left:auto;font:26px var(--mono);color:var(--teal)}.prompt-label{display:flex;justify-content:space-between;font-size:11px;color:#8b979d;margin-bottom:15px}.prompt-label span{font:11px var(--mono)}
+.prompt,.typing{font:25px/1.7 var(--mono);letter-spacing:-.5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.prompt{margin:0;color:#66767e;cursor:text}
+.prompt .correct{color:#008775}.prompt .incorrect{background:#fff0ee;color:#c45b52;border-radius:2px}.prompt .cursor{border-bottom:2px solid #15a18d}.progress-track{height:3px;background:#f1f4f5;margin:14px 0 21px}.progress-track div{height:100%;width:0;background:#32a28e;transition:width .1s}
+.typing{
+  field-sizing:content;
+  min-height:1.7em;
+  margin:4px 0 0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--ink);
+  caret-color:var(--teal);
+  resize:none;
+}
+.typing:focus{box-shadow:none}
+.typing::placeholder{color:#89969c}
+.typing:disabled::placeholder{color:transparent}
+.input-caption{display:flex;justify-content:space-between;font-size:9px;color:#9ba5ab;margin:10px 0 27px;gap:10px}.controls{display:flex;gap:10px;margin-top:auto}.controls .muted{margin-left:auto;color:#98a2a8}.recording-line{border-top:1px solid #edf1f2;margin-top:22px;padding-top:17px;font-size:10px;color:#9aa5ab;display:flex;align-items:center;gap:7px}.recording-line>span:last-child{margin-left:auto;font:12px var(--mono);color:#6e8089}.live-dot{background:#0d9986;box-shadow:0 0 0 3px #0d998614}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:22px 0}.metric{padding:21px 22px;border:1px solid var(--border);border-radius:10px;background:white}.metric>div{font-size:11px;color:#6f7e85;display:flex;justify-content:space-between;gap:6px}.metric>div span{font:9px var(--mono);color:#a0adb3}.metric strong{display:block;font:32px var(--mono);letter-spacing:-1px;margin:15px 0 10px}.metric:first-child strong{color:var(--teal)}.metric small{font-size:9px;color:#9ca7ad}.results{padding:23px 25px}.results-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:21px}.count{font:10px var(--mono);background:#eff4f3;color:var(--teal);border-radius:4px;padding:3px 6px}.export-buttons{display:flex;gap:8px}.table-scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:11px}th{background:#f8fafb;padding:12px;color:#93a0a7;font-weight:500;border-block:1px solid #edf1f3}td{border-bottom:1px solid #eff2f3;padding:14px 12px;color:#52666e}td.numeric{font-family:var(--mono)}td small{color:#97a3a8;margin-left:5px}.empty{padding:36px 15px;text-align:center;color:#85969e}.empty>span{display:block;font-size:29px;color:#b5c7c9;margin-bottom:10px}.empty strong{font-size:12px;font-weight:500}.empty p{font-size:10px;color:#a4afb4;margin:9px 0}.guide{margin:25px 0;background:#edf1f3;border-radius:8px;padding:16px 20px;color:#70838d}.guide summary{cursor:pointer;font-size:11px;list-style:none;display:flex;justify-content:space-between}.guide-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px 35px;padding:10px 0}.guide h3{font-size:12px;font-weight:600}.guide p{font-size:11px;line-height:1.9;color:#7d8c93}footer{display:flex;justify-content:space-between;font-size:10px;color:#abb5ba;padding:7px 0 15px}footer b{font-size:8px;font-weight:500;letter-spacing:1px;margin-left:13px}.notice{padding:14px 18px;border:1px solid #ebdcb5;background:#fff7e6;color:#906924;border-radius:8px;margin-bottom:20px;font-size:12px}.sr-only{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}dialog{border:1px solid #dce5e7;border-radius:14px;max-width:800px;width:90%;max-height:85vh;padding:26px;color:var(--ink)}dialog::backdrop{background:#10272d70;backdrop-filter:blur(3px)}.dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 25px}.detail-grid>div{padding:10px 0;display:flex;justify-content:space-between;border-bottom:1px solid #edf0f1;font-size:12px}.detail-grid b{font:12px var(--mono)}.detail-text{background:#f4f7f8;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.8 var(--mono)}.muted-text{font-size:11px;line-height:1.8;color:#839199}[hidden]{display:none!important}
+@media(min-width:1500px){main{padding-top:54px}}@media(max-width:1050px){main{padding:30px 22px}.workspace{grid-template-columns:250px minmax(0,1fr);gap:16px}.typing-panel{padding:24px}.metric{padding:18px 14px}.metric>div{font-size:10px}.metric small{font-size:8px}.prompt,.typing{font-size:22px}.input-caption{flex-wrap:wrap}.controls{gap:6px}.controls .button{padding:12px}}
+@media(max-width:760px){.topbar{height:65px;padding:0 20px}.lab-label{display:none}.local-tag{font-size:10px}.heading{align-items:flex-start;gap:15px}h1{font-size:23px}.heading>.button{font-size:0;padding:11px}.heading>.button span{font-size:11px}.heading p{font-size:11px}.workspace{grid-template-columns:1fr}.setup{padding:20px}.setup fieldset{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}.setup fieldset>label{grid-column:1/-1;margin:7px 0 0}.setup fieldset>input,.setup fieldset>select,.setup fieldset>textarea,#customWrap,.setup fieldset>.field-row{grid-column:1/-1}.setup-foot{display:none}.typing-panel{padding:22px}.metrics{grid-template-columns:repeat(2,1fr)}.metric:last-child{grid-column:1/-1}.metric strong{font-size:28px}.results{padding:20px 15px}.results-head{align-items:flex-start;gap:20px}.export-buttons{flex-direction:column}.guide-grid{grid-template-columns:1fr}.prompt,.typing{font-size:22px}.controls{flex-wrap:wrap}.controls .muted{margin-left:0}.detail-grid{grid-template-columns:1fr}footer>span:last-child{display:none}}
 
 .touch-panel{padding:22px 26px;margin-bottom:22px}.touch-header{display:flex;justify-content:space-between;gap:20px;align-items:center}.touch-header .eyebrow{margin-bottom:9px}.touch-options{display:flex;align-items:center;gap:24px;margin-top:18px;flex-wrap:wrap}.touch-options label{margin:0;display:flex;align-items:center;gap:8px}.touch-options input[type=number]{width:85px}.touch-options input[type=checkbox]{width:16px;height:16px;accent-color:var(--teal)}#touchStatus{font-size:11px;color:#8e7560}#touchStatus.connected{color:var(--teal)}#physicalRest{font:26px var(--mono);color:var(--teal);margin-left:auto}.touch-panel p{margin-bottom:0}.touch-header .button{white-space:nowrap}@media(max-width:760px){.touch-header{align-items:flex-start}.touch-header h2{line-height:1.6}.touch-panel{padding:20px}.touch-options{gap:15px}.touch-header .button{padding:10px;font-size:10px}}
 </style>
@@ -33,17 +52,16 @@
 <div class="field-row"><div><label for="restSeconds">시작 전 레스팅 <span>초</span></label><input id="restSeconds" type="number" min="0" max="120" step="1" value="3"></div><div><label for="idleSeconds">무입력 기준 <span>초</span></label><input id="idleSeconds" type="number" min="0.2" max="60" step="0.1" value="2"></div></div>
 <label for="notes">조건 메모</label><textarea id="notes" rows="2" maxlength="2000" placeholder="오버레이, 피드백, 기기 설정 등"></textarea>
 </fieldset>
-<div class="setup-foot"><span class="tiny-dot"></span><p>설정은 회차 시작 시 고정됩니다.<br>연습 기록도 별도 표시하여 저장합니다.</p></div>
+<div class="setup-foot"><span class="tiny-dot"></span><p>설정은 회차 시작 시 고정됩니다.<br>로깅한 연습 회차는 ‘연습’으로 표시합니다.</p></div>
 </aside>
 <section class="panel typing-panel">
-<div class="section-title"><span class="step">02</span><h2>타이핑 세션</h2><span id="state" class="state">준비됨</span></div>
+<div class="section-title"><span class="step">02</span><h2>타이핑 세션</h2><span id="state" class="state">자유 연습</span></div>
 <div class="session-meta"><span id="trialLabel">TRIAL 01</span><span id="phraseLabel">ENGLISH / 01</span><button id="nextPrompt" class="text-button">다른 문장 ↗</button></div>
-<div id="cue" class="cue" role="status"><span id="cueIcon">↳</span><div><strong id="cueTitle">편안하게 준비하세요</strong><p id="cueText">기록을 시작하면 레스팅 후 입력 신호가 표시됩니다.</p></div><span id="countdown"></span></div>
+<div id="cue" class="cue" role="status"><span id="cueIcon">↳</span><div><strong id="cueTitle"></strong><p id="cueText"></p></div><span id="countdown"></span></div>
 <div class="prompt-label">아래 문장을 그대로 입력하세요 <span id="progressLabel">0 / 0</span></div>
-<div id="prompt" class="prompt" aria-label="입력할 문장"></div>
+<label for="typing" id="prompt" class="prompt"></label>
+<textarea id="typing" class="typing" aria-label="따라 치기" aria-describedby="prompt" placeholder="여기에 따라 치세요" rows="1" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
 <div class="progress-track"><div id="progressBar"></div></div>
-<label for="typing" class="sr-only">타이핑 입력 영역</label>
-<textarea id="typing" class="typing" placeholder="입력 신호가 나타나면 여기에 타이핑하세요…" rows="3" disabled spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
 <div class="input-caption"><span>공백·대소문자·문장부호를 포함합니다.</span><span>붙여넣기 차단 · 한글 IME 지원</span></div>
 <div class="controls"><button id="start" class="button primary"><span>●</span> 로깅 시작</button><button id="rest" class="button secondary" disabled>Ⅱ 레스팅</button><button id="finish" class="button dark" disabled>회차 완료 ↗</button><button id="abort" class="text-button muted" disabled>중단</button></div>
 <div class="recording-line"><span id="recordingDot" class="tiny-dot"></span><span id="recordingStatus">기록 대기 중</span><span id="elapsed">00:00.0</span></div>
@@ -324,7 +342,7 @@ const phrases = {
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
 };
 let records = [], active = null, origin = 0, phase = 'ready', phraseIndex = 0;
-let composing = false, committed = '', db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
+let composing = false, db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
 const fmt = (n, digits=1) => n == null || !Number.isFinite(n) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const time = () => Math.round((performance.now()-origin)*1000)/1000;
 const promptText = () => $('language').value==='custom' ? $('customPrompt').value : phrases[$('language').value][phraseIndex % phrases[$('language').value].length];
@@ -371,18 +389,15 @@ function loadDB() {
   });
 }
 function renderPrompt() {
-  const target = active?.prompt ?? promptText(), typed=M.chars(active?.text ?? '');
+  const target = M.chars(active?.prompt ?? promptText()), typed = M.chars($('typing').value);
   const fragment=document.createDocumentFragment();
-  M.chars(target).forEach((c,i)=>{
+  target.forEach((c,i)=>{
     const span=document.createElement('span'); span.textContent=c;
     span.className=i<typed.length ? (c===typed[i] ? 'correct':'incorrect') : i===typed.length ? 'cursor':'';
     fragment.append(span);
   });
-  if (typed.length>M.chars(target).length) {
-    const extra=document.createElement('span');extra.className='incorrect';extra.textContent=typed.slice(M.chars(target).length).join('');fragment.append(extra);
-  }
   $('prompt').replaceChildren(fragment);
-  const length=M.chars(target).length;
+  const length=target.length;
   $('progressLabel').textContent=`${typed.length} / ${length}`;
   $('progressBar').style.width=`${Math.min(100,length?typed.length/length*100:0)}%`;
   $('phraseLabel').textContent=$('language').value==='custom'?'CUSTOM':`${$('language').value==='ko'?'한국어':'ENGLISH'} / ${String(phraseIndex+1).padStart(2,'0')}`;
@@ -393,16 +408,30 @@ function setCue(title,description,icon='↳',resting=false) {
 function setPhase(next) {
   phase=next;
   const running=!!active;
-  $('state').textContent=({ready:'준비됨',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:'저장됨'})[next];
+  $('state').textContent=({ready:'자유 연습',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:finalizing?'저장 중':'회차 종료'})[next];
   $('state').classList.toggle('active',running);
   for (const name of ['connectTouch','touchEnabled','touchThreshold']) $(name).disabled=running||finalizing;
-  $('settings').disabled=running; $('start').disabled=running; $('nextPrompt').disabled=running;
+  $('settings').disabled=running||finalizing; $('start').disabled=running||finalizing; $('nextPrompt').disabled=running||finalizing;
   $('rest').disabled=!['typing','rest'].includes(next); $('finish').disabled=!['typing','rest'].includes(next); $('abort').disabled=!running;
   $('rest').textContent=next==='rest'?'▶ 입력 재개':'Ⅱ 레스팅';
-  $('typing').disabled=next!=='typing';
+  $('typing').disabled=finalizing || next==='baseline' || next==='rest';
   $('recordingDot').classList.toggle('live-dot',running);
   $('recordingStatus').textContent=running?'이 회차의 이벤트를 기록하고 있습니다':storageBroken?'저장 실패 · 파일로 내보내세요':'기록 대기 중';
   $('start').innerHTML=next==='done'?'<span>●</span> 다음 회차 시작':'<span>●</span> 로깅 시작';
+}
+function showPractice() {
+  setPhase('ready');
+  setCue('바로 타이핑하세요','자유롭게 연습하거나, 새 회차를 기록하려면 로깅 시작을 누르세요.');
+  $('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
+  for (const name of ['wpm','accuracy','latency']) $(name).textContent='—';
+  for (const name of ['restMetric','idleMetric']) $(name).textContent='0.0';
+  $('physicalRest').textContent='— s';
+  $('elapsed').textContent='00:00.0';
+}
+function resetPracticeText() {
+  if (phase==='done') showPractice();
+  $('typing').value='';
+  renderPrompt();
 }
 function start() {
   if (active || finalizing) return;
@@ -413,7 +442,7 @@ function start() {
   if (!$('participant').value.trim()) {notify('참가자 ID를 입력하세요.');$('participant').focus();return;}
   const prompt=promptText().normalize('NFC');
   if (!prompt.trim()) {notify('입력할 문장을 먼저 작성하세요.');return;}
-  origin=performance.now();composing=false;committed='';$('typing').value='';$('countdown').textContent='';
+  origin=performance.now();composing=false;$('typing').value='';$('countdown').textContent='';
   active={schema:SCHEMA,version:VERSION,id:id(),sessionId:sessionId,trial:records.length+1,
     participant:$('participant').value.trim(),condition:$('condition').value,block:Number($('block').value),
     kind:$('trialKind').value,language:$('language').value,promptIndex:phraseIndex,prompt,
@@ -447,10 +476,9 @@ function toggleRest() {
 function commitText(inputType='') {
   if (!active || phase!=='typing' || composing) return;
   const next=$('typing').value.normalize('NFC');
-  if (next!==committed) {
-    const d=M.delta(committed,next);
-    event('text_commit',{inputType,before:committed,after:next,...d});committed=next;active.text=next;
-    renderPrompt();
+  if (next!==active.text) {
+    const d=M.delta(active.text,next);
+    event('text_commit',{inputType,before:active.text,after:next,...d});active.text=next;
   }
 }
 async function finish(status='completed') {
@@ -462,7 +490,7 @@ async function finish(status='completed') {
   ended.endMs=now;ended.endedAt=new Date(ended.startedUnix+now).toISOString();ended.lastSavedMs=now;ended.status=status;ended.metrics=summary(ended);
   captureTouch(ended,now);
   records.push(ended);active=null;finalizing=true;
-  setPhase('done');$('countdown').textContent='';$('start').disabled=true;
+  setPhase('done');$('countdown').textContent='';
   setCue(status==='completed'?'회차가 완료되었습니다':'중단한 회차도 보관합니다','데이터를 저장하고 있습니다.','✓');
   renderMetrics(ended,now);renderRecords();
   await persist(ended);
@@ -478,12 +506,13 @@ async function finish(status='completed') {
     } while(performance.now()<deadline);
     captureTouch(ended,now);
   }
-  ended.metrics=summary(ended);finalizing=false;setPhase('done');
-  renderMetrics(ended,now);renderRecords();await persist(ended);
+  ended.metrics=summary(ended);await persist(ended);finalizing=false;setPhase('done');
+  renderMetrics(ended,now);renderRecords();
   if(ended.config.touchEnabled&&ended.metrics.touch_quality!=='complete')notify('터치 로그가 일부 구간을 덮지 못했습니다. 실측 값은 확인된 구간만의 합계이며 회차 상세의 측정 범위를 확인하세요.');
   if (!active) {
     $('recordingStatus').textContent=storageBroken?'저장 실패 · 파일로 내보내세요':`${ended.events.length}개 이벤트 · 이 브라우저에 저장됨`;
     $('cueText').textContent=storageBroken?'저장에 실패했습니다. 전체 JSON으로 데이터를 내보내세요.':'요약 CSV 또는 전체 JSON으로 내보낼 수 있습니다. 다음 회차도 같은 문장으로 시작합니다.';
+    if (document.activeElement===document.body) $('typing').focus({preventScroll:true});
   }
 }
 function renderMetrics(trial,now) {
@@ -549,23 +578,38 @@ setInterval(async()=>{
 },250);
 $('start').onclick=start;$('rest').onclick=toggleRest;$('finish').onclick=()=>finish();$('abort').onclick=()=>finish('aborted');
 $('exportAll').onclick=()=>exportData('json');$('exportSummary').onclick=()=>exportData('summary');$('exportEvents').onclick=()=>exportData('events');$('closeDetail').onclick=()=>$('detail').close();
-$('language').onchange=()=>{phraseIndex=0;$('customWrap').hidden=$('language').value!=='custom';if(!active){$('typing').value='';renderPrompt();}};
-$('customPrompt').oninput=()=>{if(!active)renderPrompt();};
-$('nextPrompt').onclick=()=>{if(active)return;if($('language').value==='custom'){$('customPrompt').focus();return;}phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;$('typing').value='';renderPrompt();};
+$('language').onchange=()=>{
+  phraseIndex=0;
+  const custom=$('language').value==='custom';
+  $('customWrap').hidden=!custom;
+  resetPracticeText();
+  $(custom?'customPrompt':'typing').focus();
+};
+$('customPrompt').oninput=resetPracticeText;
+$('nextPrompt').onclick=()=>{
+  if($('language').value==='custom'){$('customPrompt').focus();return;}
+  phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;
+  resetPracticeText();
+  $('typing').focus();
+};
 for(const type of ['keydown','keyup']) $('typing').addEventListener(type,e=>{
   if(!active || phase!=='typing') return;
   const typingKey=!(e.ctrlKey||e.metaKey||e.altKey) && (e.key.length===1 || ['Backspace','Delete','Enter','Process','Unidentified','Dead'].includes(e.key) || e.isComposing);
   event(type,{key:e.key,code:e.code,repeat:e.repeat,ctrl:e.ctrlKey,alt:e.altKey,shift:e.shiftKey,meta:e.metaKey,isComposing:e.isComposing,typingKey,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
 });
 $('typing').addEventListener('beforeinput',e=>{
-  if(!active)return;
   if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop') {e.preventDefault();event('paste_blocked',{inputType:e.inputType});return;}
   event('beforeinput',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
 });
-$('typing').addEventListener('input',e=>{event('input',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,value:$('typing').value});if(!e.isComposing)commitText(e.inputType);});
+$('typing').addEventListener('input',e=>{
+  if(phase==='done') showPractice();
+  event('input',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,value:$('typing').value});
+  if(!e.isComposing) commitText(e.inputType);
+  renderPrompt();
+});
 $('typing').addEventListener('compositionstart',e=>{composing=true;event('compositionstart',{data:e.data});});
 $('typing').addEventListener('compositionupdate',e=>event('compositionupdate',{data:e.data}));
-$('typing').addEventListener('compositionend',e=>{composing=false;event('compositionend',{data:e.data});commitText('compositionend');});
+$('typing').addEventListener('compositionend',e=>{composing=false;event('compositionend',{data:e.data});commitText('compositionend');renderPrompt();});
 for(const type of ['paste','drop']) $('typing').addEventListener(type,e=>{e.preventDefault();event(type+'_blocked');});
 for(const type of ['focus','blur']) $('typing').addEventListener(type,()=>event(type,{target:'typing'}));
 window.addEventListener('blur',()=>event('window_blur'));
@@ -584,6 +628,9 @@ setInterval(()=>{
 },100);
 setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
 (async()=>{
+  showPractice();
+  renderPrompt();
+  $('typing').focus({preventScroll:true});
   $('start').disabled=true;
   try {
     records=await loadDB();records.sort((a,b)=>a.startedUnix-b.startedUnix);
@@ -596,6 +643,6 @@ setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
     if(recovered)notify(`${recovered}개의 진행 중 기록을 마지막 저장 시점까지 복구했습니다. 불완전한 회차로 표시했습니다.`);
   }catch{storageBroken=true;notify('이 환경에서는 브라우저 저장소를 사용할 수 없습니다. 파일 내보내기는 가능합니다. 창을 닫기 전에 데이터를 저장하세요.');}
   $('start').disabled=false;$('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
-  renderRecords();renderPrompt();
+  renderRecords();
 })();
 </script></body></html>

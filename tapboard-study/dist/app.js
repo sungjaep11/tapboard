@@ -21,7 +21,7 @@ const phrases = {
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
 };
 let records = [], active = null, origin = 0, phase = 'ready', phraseIndex = 0;
-let composing = false, committed = '', db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
+let composing = false, db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
 const fmt = (n, digits=1) => n == null || !Number.isFinite(n) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const time = () => Math.round((performance.now()-origin)*1000)/1000;
 const promptText = () => $('language').value==='custom' ? $('customPrompt').value : phrases[$('language').value][phraseIndex % phrases[$('language').value].length];
@@ -68,18 +68,15 @@ function loadDB() {
   });
 }
 function renderPrompt() {
-  const target = active?.prompt ?? promptText(), typed=M.chars(active?.text ?? '');
+  const target = M.chars(active?.prompt ?? promptText()), typed = M.chars($('typing').value);
   const fragment=document.createDocumentFragment();
-  M.chars(target).forEach((c,i)=>{
+  target.forEach((c,i)=>{
     const span=document.createElement('span'); span.textContent=c;
     span.className=i<typed.length ? (c===typed[i] ? 'correct':'incorrect') : i===typed.length ? 'cursor':'';
     fragment.append(span);
   });
-  if (typed.length>M.chars(target).length) {
-    const extra=document.createElement('span');extra.className='incorrect';extra.textContent=typed.slice(M.chars(target).length).join('');fragment.append(extra);
-  }
   $('prompt').replaceChildren(fragment);
-  const length=M.chars(target).length;
+  const length=target.length;
   $('progressLabel').textContent=`${typed.length} / ${length}`;
   $('progressBar').style.width=`${Math.min(100,length?typed.length/length*100:0)}%`;
   $('phraseLabel').textContent=$('language').value==='custom'?'CUSTOM':`${$('language').value==='ko'?'한국어':'ENGLISH'} / ${String(phraseIndex+1).padStart(2,'0')}`;
@@ -90,16 +87,30 @@ function setCue(title,description,icon='↳',resting=false) {
 function setPhase(next) {
   phase=next;
   const running=!!active;
-  $('state').textContent=({ready:'준비됨',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:'저장됨'})[next];
+  $('state').textContent=({ready:'자유 연습',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:finalizing?'저장 중':'회차 종료'})[next];
   $('state').classList.toggle('active',running);
   for (const name of ['connectTouch','touchEnabled','touchThreshold']) $(name).disabled=running||finalizing;
-  $('settings').disabled=running; $('start').disabled=running; $('nextPrompt').disabled=running;
+  $('settings').disabled=running||finalizing; $('start').disabled=running||finalizing; $('nextPrompt').disabled=running||finalizing;
   $('rest').disabled=!['typing','rest'].includes(next); $('finish').disabled=!['typing','rest'].includes(next); $('abort').disabled=!running;
   $('rest').textContent=next==='rest'?'▶ 입력 재개':'Ⅱ 레스팅';
-  $('typing').disabled=next!=='typing';
+  $('typing').disabled=finalizing || next==='baseline' || next==='rest';
   $('recordingDot').classList.toggle('live-dot',running);
   $('recordingStatus').textContent=running?'이 회차의 이벤트를 기록하고 있습니다':storageBroken?'저장 실패 · 파일로 내보내세요':'기록 대기 중';
   $('start').innerHTML=next==='done'?'<span>●</span> 다음 회차 시작':'<span>●</span> 로깅 시작';
+}
+function showPractice() {
+  setPhase('ready');
+  setCue('바로 타이핑하세요','자유롭게 연습하거나, 새 회차를 기록하려면 로깅 시작을 누르세요.');
+  $('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
+  for (const name of ['wpm','accuracy','latency']) $(name).textContent='—';
+  for (const name of ['restMetric','idleMetric']) $(name).textContent='0.0';
+  $('physicalRest').textContent='— s';
+  $('elapsed').textContent='00:00.0';
+}
+function resetPracticeText() {
+  if (phase==='done') showPractice();
+  $('typing').value='';
+  renderPrompt();
 }
 function start() {
   if (active || finalizing) return;
@@ -110,7 +121,7 @@ function start() {
   if (!$('participant').value.trim()) {notify('참가자 ID를 입력하세요.');$('participant').focus();return;}
   const prompt=promptText().normalize('NFC');
   if (!prompt.trim()) {notify('입력할 문장을 먼저 작성하세요.');return;}
-  origin=performance.now();composing=false;committed='';$('typing').value='';$('countdown').textContent='';
+  origin=performance.now();composing=false;$('typing').value='';$('countdown').textContent='';
   active={schema:SCHEMA,version:VERSION,id:id(),sessionId:sessionId,trial:records.length+1,
     participant:$('participant').value.trim(),condition:$('condition').value,block:Number($('block').value),
     kind:$('trialKind').value,language:$('language').value,promptIndex:phraseIndex,prompt,
@@ -144,10 +155,9 @@ function toggleRest() {
 function commitText(inputType='') {
   if (!active || phase!=='typing' || composing) return;
   const next=$('typing').value.normalize('NFC');
-  if (next!==committed) {
-    const d=M.delta(committed,next);
-    event('text_commit',{inputType,before:committed,after:next,...d});committed=next;active.text=next;
-    renderPrompt();
+  if (next!==active.text) {
+    const d=M.delta(active.text,next);
+    event('text_commit',{inputType,before:active.text,after:next,...d});active.text=next;
   }
 }
 async function finish(status='completed') {
@@ -159,7 +169,7 @@ async function finish(status='completed') {
   ended.endMs=now;ended.endedAt=new Date(ended.startedUnix+now).toISOString();ended.lastSavedMs=now;ended.status=status;ended.metrics=summary(ended);
   captureTouch(ended,now);
   records.push(ended);active=null;finalizing=true;
-  setPhase('done');$('countdown').textContent='';$('start').disabled=true;
+  setPhase('done');$('countdown').textContent='';
   setCue(status==='completed'?'회차가 완료되었습니다':'중단한 회차도 보관합니다','데이터를 저장하고 있습니다.','✓');
   renderMetrics(ended,now);renderRecords();
   await persist(ended);
@@ -175,12 +185,13 @@ async function finish(status='completed') {
     } while(performance.now()<deadline);
     captureTouch(ended,now);
   }
-  ended.metrics=summary(ended);finalizing=false;setPhase('done');
-  renderMetrics(ended,now);renderRecords();await persist(ended);
+  ended.metrics=summary(ended);await persist(ended);finalizing=false;setPhase('done');
+  renderMetrics(ended,now);renderRecords();
   if(ended.config.touchEnabled&&ended.metrics.touch_quality!=='complete')notify('터치 로그가 일부 구간을 덮지 못했습니다. 실측 값은 확인된 구간만의 합계이며 회차 상세의 측정 범위를 확인하세요.');
   if (!active) {
     $('recordingStatus').textContent=storageBroken?'저장 실패 · 파일로 내보내세요':`${ended.events.length}개 이벤트 · 이 브라우저에 저장됨`;
     $('cueText').textContent=storageBroken?'저장에 실패했습니다. 전체 JSON으로 데이터를 내보내세요.':'요약 CSV 또는 전체 JSON으로 내보낼 수 있습니다. 다음 회차도 같은 문장으로 시작합니다.';
+    if (document.activeElement===document.body) $('typing').focus({preventScroll:true});
   }
 }
 function renderMetrics(trial,now) {
@@ -246,23 +257,38 @@ setInterval(async()=>{
 },250);
 $('start').onclick=start;$('rest').onclick=toggleRest;$('finish').onclick=()=>finish();$('abort').onclick=()=>finish('aborted');
 $('exportAll').onclick=()=>exportData('json');$('exportSummary').onclick=()=>exportData('summary');$('exportEvents').onclick=()=>exportData('events');$('closeDetail').onclick=()=>$('detail').close();
-$('language').onchange=()=>{phraseIndex=0;$('customWrap').hidden=$('language').value!=='custom';if(!active){$('typing').value='';renderPrompt();}};
-$('customPrompt').oninput=()=>{if(!active)renderPrompt();};
-$('nextPrompt').onclick=()=>{if(active)return;if($('language').value==='custom'){$('customPrompt').focus();return;}phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;$('typing').value='';renderPrompt();};
+$('language').onchange=()=>{
+  phraseIndex=0;
+  const custom=$('language').value==='custom';
+  $('customWrap').hidden=!custom;
+  resetPracticeText();
+  $(custom?'customPrompt':'typing').focus();
+};
+$('customPrompt').oninput=resetPracticeText;
+$('nextPrompt').onclick=()=>{
+  if($('language').value==='custom'){$('customPrompt').focus();return;}
+  phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;
+  resetPracticeText();
+  $('typing').focus();
+};
 for(const type of ['keydown','keyup']) $('typing').addEventListener(type,e=>{
   if(!active || phase!=='typing') return;
   const typingKey=!(e.ctrlKey||e.metaKey||e.altKey) && (e.key.length===1 || ['Backspace','Delete','Enter','Process','Unidentified','Dead'].includes(e.key) || e.isComposing);
   event(type,{key:e.key,code:e.code,repeat:e.repeat,ctrl:e.ctrlKey,alt:e.altKey,shift:e.shiftKey,meta:e.metaKey,isComposing:e.isComposing,typingKey,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
 });
 $('typing').addEventListener('beforeinput',e=>{
-  if(!active)return;
   if(e.inputType==='insertFromPaste'||e.inputType==='insertFromDrop') {e.preventDefault();event('paste_blocked',{inputType:e.inputType});return;}
   event('beforeinput',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
 });
-$('typing').addEventListener('input',e=>{event('input',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,value:$('typing').value});if(!e.isComposing)commitText(e.inputType);});
+$('typing').addEventListener('input',e=>{
+  if(phase==='done') showPractice();
+  event('input',{inputType:e.inputType,data:e.data,isComposing:e.isComposing,value:$('typing').value});
+  if(!e.isComposing) commitText(e.inputType);
+  renderPrompt();
+});
 $('typing').addEventListener('compositionstart',e=>{composing=true;event('compositionstart',{data:e.data});});
 $('typing').addEventListener('compositionupdate',e=>event('compositionupdate',{data:e.data}));
-$('typing').addEventListener('compositionend',e=>{composing=false;event('compositionend',{data:e.data});commitText('compositionend');});
+$('typing').addEventListener('compositionend',e=>{composing=false;event('compositionend',{data:e.data});commitText('compositionend');renderPrompt();});
 for(const type of ['paste','drop']) $('typing').addEventListener(type,e=>{e.preventDefault();event(type+'_blocked');});
 for(const type of ['focus','blur']) $('typing').addEventListener(type,()=>event(type,{target:'typing'}));
 window.addEventListener('blur',()=>event('window_blur'));
@@ -281,6 +307,9 @@ setInterval(()=>{
 },100);
 setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
 (async()=>{
+  showPractice();
+  renderPrompt();
+  $('typing').focus({preventScroll:true});
   $('start').disabled=true;
   try {
     records=await loadDB();records.sort((a,b)=>a.startedUnix-b.startedUnix);
@@ -293,5 +322,5 @@ setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
     if(recovered)notify(`${recovered}개의 진행 중 기록을 마지막 저장 시점까지 복구했습니다. 불완전한 회차로 표시했습니다.`);
   }catch{storageBroken=true;notify('이 환경에서는 브라우저 저장소를 사용할 수 없습니다. 파일 내보내기는 가능합니다. 창을 닫기 전에 데이터를 저장하세요.');}
   $('start').disabled=false;$('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
-  renderRecords();renderPrompt();
+  renderRecords();
 })();
