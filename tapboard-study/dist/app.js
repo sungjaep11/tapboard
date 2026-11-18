@@ -17,7 +17,7 @@ function renderTouchStatus() {
 }
 const VERSION = '1.1.0', SCHEMA = 'tapboard-study/v1';
 const phrases = {
-  en: ['The quick brown fox jumps over the lazy dog.','A quiet morning is a good time to start.','Place your hands gently on the keyboard.','Small steps can lead to meaningful changes.','The warm light falls across the wooden desk.','Take a short break before the next sentence.','We learn something new with every attempt.','Keep your eyes on the words in front of you.'],
+  en: mackenziePhrases,
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
 };
 let records = [], active = null, origin = 0, phase = 'ready', phraseIndex = 0;
@@ -100,7 +100,7 @@ function setPhase(next) {
 }
 function showPractice() {
   setPhase('ready');
-  setCue('바로 타이핑하세요','자유롭게 연습하거나, 새 회차를 기록하려면 로깅 시작을 누르세요.');
+  setCue('바로 타이핑하세요','기본 문장 세트에서는 Enter로 다음 문장으로 넘어갑니다. 문장을 정확히 다 치면 스페이스바로도 넘어갈 수 있습니다.');
   $('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
   for (const name of ['wpm','accuracy','latency']) $(name).textContent='—';
   for (const name of ['restMetric','idleMetric']) $(name).textContent='0.0';
@@ -265,12 +265,25 @@ $('language').onchange=()=>{
   $(custom?'customPrompt':'typing').focus();
 };
 $('customPrompt').oninput=resetPracticeText;
-$('nextPrompt').onclick=()=>{
+function nextPrompt() {
   if($('language').value==='custom'){$('customPrompt').focus();return;}
   phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;
   resetPracticeText();
   $('typing').focus();
-};
+}
+$('nextPrompt').onclick=nextPrompt;
+$('typing').addEventListener('keydown', e=>{
+  if (active || finalizing || $('language').value==='custom') return;
+  if (composing || e.isComposing || e.keyCode===229 || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+  if (e.key!=='Enter' && e.key!==' ') return;
+  const input=e.currentTarget;
+  if (e.key===' ' && !(e.repeat && input.value==='')) {
+    if (input.selectionStart!==input.value.length || input.selectionEnd!==input.value.length) return;
+    if (input.value.normalize('NFC')!==promptText().normalize('NFC')) return;
+  }
+  e.preventDefault();
+  if (!e.repeat) nextPrompt();
+});
 for(const type of ['keydown','keyup']) $('typing').addEventListener(type,e=>{
   if(!active || phase!=='typing') return;
   const typingKey=!(e.ctrlKey||e.metaKey||e.altKey) && (e.key.length===1 || ['Backspace','Delete','Enter','Process','Unidentified','Dead'].includes(e.key) || e.isComposing);
