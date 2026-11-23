@@ -51,10 +51,11 @@ namespace TapBoard
 
         // A young contact is still pending, not expired. The minimum duration
         // only rejects a completed tap; it must not dim a newly touched key.
+        internal bool HasTimedOut { get { return elapsedMilliseconds() >= KeyboardSettings.Current.TapDurationMs; } }
+
         internal bool IsExpired()
         {
-            return elapsedMilliseconds() >= KeyboardSettings.Current.TapDurationMs ||
-                GetDisplacement() >= KeyboardSettings.Current.TapDistancePixels;
+            return HasTimedOut || GetDisplacement() >= KeyboardSettings.Current.TapDistancePixels;
         }
 
         public bool IsTap()

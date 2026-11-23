@@ -12,14 +12,21 @@ namespace TapBoard
         private readonly Dictionary<int, Key> keyContacts = new Dictionary<int, Key>();
         // Modifiers keep contact ownership but do not consume ordinary-key slots.
         private readonly Dictionary<int, Key> modifierContacts = new Dictionary<int, Key>();
-        // One snapshot per finger, including overlapping taps of the same character.
-        private readonly Dictionary<int, bool> characterShiftAtDown = new Dictionary<int, bool>();
+        private sealed class PendingTap
+        {
+            internal Key Key;
+            internal Stroke Contact;
+            internal bool ShiftAtDown;
+            internal double? ReleasedAt;
+            internal KeyInputEventArgs Input;
+        }
+        // The queue keeps press order even after Windows reuses a released contact ID.
+        private readonly Queue<PendingTap> tapOrder = new Queue<PendingTap>();
+        private readonly Dictionary<int, PendingTap> activeTaps = new Dictionary<int, PendingTap>();
         private bool inputLocked;
         private readonly Func<double> clock;
         private readonly int sameKeyMinIntervalMs;
-        private Key lastTapKey;
-        private double lastTapTime;
-        private bool lastTapShift, lastTapControl, lastTapAlt;
+        private PendingTap lastTap;
 
         internal KeyboardInputController() : this(KeyboardSettings.Current.SameKeyMinIntervalMs,
             () => System.Diagnostics.Stopwatch.GetTimestamp() * 1000.0 / System.Diagnostics.Stopwatch.Frequency) { }
@@ -30,20 +37,65 @@ namespace TapBoard
             this.clock = clock;
         }
 
-        private bool AllowTap(Key key, bool shift, bool control, bool altOn)
+        private bool AllowTap(PendingTap tap)
         {
-            double now = clock();
-            if (lastTapKey == key && lastTapShift == shift && lastTapControl == control &&
-                lastTapAlt == altOn && now - lastTapTime < sameKeyMinIntervalMs)
+            // Compare actual releases, which can be far apart or in reverse order
+            // even when the two keys are delivered together.
+            if (lastTap != null && lastTap.Key == tap.Key &&
+                lastTap.Input.shift == tap.Input.shift && lastTap.Input.control == tap.Input.control &&
+                lastTap.Input.alt == tap.Input.alt && lastTap.Input.windows == tap.Input.windows &&
+                Math.Abs(tap.ReleasedAt.Value - lastTap.ReleasedAt.Value) < sameKeyMinIntervalMs)
                 return false;
-            // Rejected bounces never extend the suppression period. Intervening
-            // accepted keys and changed modifiers permit a fresh input immediately.
-            lastTapKey = key;
-            lastTapTime = now;
-            lastTapShift = shift;
-            lastTapControl = control;
-            lastTapAlt = altOn;
+            lastTap = tap;
             return true;
+        }
+
+        private void UpdateTap(Key key, KeyAreaEvent e, int id, bool accepted, bool shift)
+        {
+            PendingTap tap;
+            if (e == KeyAreaEvent.TOUCH && !activeTaps.ContainsKey(id))
+            {
+                Stroke contact = key.State.GetTappingContact(id);
+                if (contact == null) return;
+                tap = new PendingTap { Key = key, Contact = contact, ShiftAtDown = shift };
+                activeTaps.Add(id, tap);
+                tapOrder.Enqueue(tap);
+            }
+            else if (e == KeyAreaEvent.RELEASE && activeTaps.TryGetValue(id, out tap))
+            {
+                activeTaps.Remove(id);
+                tap.ReleasedAt = clock();
+                if (accepted)
+                    tap.Input = CaptureInput(key.GetName(), key.Definition.label2 != null ? tap.ShiftAtDown : shift,
+                        IsControlKeyOn());
+                FlushTaps();
+            }
+        }
+
+        private void FlushTaps()
+        {
+            while (tapOrder.Count != 0)
+            {
+                PendingTap tap = tapOrder.Peek();
+                // A finger can move away and come back. Only its age can rule
+                // out a still-held contact before its final position is known.
+                if (!tap.ReleasedAt.HasValue && !tap.Contact.HasTimedOut) return;
+                tapOrder.Dequeue();
+                if (tap.Input == null) continue;
+                Stroke contact = tap.Contact;
+                if (AllowTap(tap))
+                {
+                    TraceTouch("ACCEPT", contact.pointID, contact.currentX, contact.currentY, "RELEASE");
+                    OnKeyInput(tap.Input);
+                }
+                else TraceTouch("REJECT_DUPLICATE", contact.pointID, contact.currentX, contact.currentY, tap.Input.key);
+            }
+        }
+
+        private void ClearPendingTaps()
+        {
+            activeTaps.Clear();
+            tapOrder.Clear();
         }
         internal void TrackKeyDown(int id, int x, int y)
         {
@@ -63,7 +115,7 @@ namespace TapBoard
             // Cancel before processing releases in the native packet. Once
             // locked, every tracked contact (including modifiers) must lift.
             inputLocked = true;
-            characterShiftAtDown.Clear();
+            ClearPendingTaps();
             bool releaseWindows = windowsKey != null && windowsKey.IsActive();
             foreach (Key key in keys) key.CancelContact();
             ModifiersChanged?.Invoke(false, false, false);
@@ -138,31 +190,13 @@ namespace TapBoard
             // of the ordinary key's release/tap decision and repeat schedule.
             if (shiftWasActive != shiftIsActive || controlWasActive != controlIsActive || altWasActive != altIsActive)
                 ModifiersChanged?.Invoke(shiftIsActive, controlIsActive, altIsActive);
-            bool shift = shiftIsActive;
-            // Only character keys have a shifted label. Remember Shift for
-            // each pending tap, and discard the snapshot even on a rejected up.
-            if (key != null && key.Definition.label2 != null)
+            if (key != null && key.Definition.type == Key.TYPE.TAPPER)
+                UpdateTap(key, e, pointID, accepted, shiftIsActive);
+            else if (accepted)
             {
-                if (e == KeyAreaEvent.TOUCH && !characterShiftAtDown.ContainsKey(pointID))
-                    characterShiftAtDown.Add(pointID, shift);
-                else if (e == KeyAreaEvent.RELEASE)
-                {
-                    characterShiftAtDown.TryGetValue(pointID, out shift);
-                    characterShiftAtDown.Remove(pointID);
-                }
-            }
-            if (accepted)
-            {
-                bool control = controlIsActive;
-                bool allowed = key.Definition.type != Key.TYPE.TAPPER ||
-                    AllowTap(key, shift, control, alt != null && alt.IsActive());
-                if (allowed)
-                {
-                    if (key.Definition.type == Key.TYPE.NORMAL) lastTapKey = null;
-                    TraceTouch("ACCEPT", pointID, x, y, e.ToString());
-                    CreateKeyInputEvent(key.GetName(), shift, control);
-                }
-                else TraceTouch("REJECT_DUPLICATE", pointID, x, y, key.GetName());
+                if (key.Definition.type == Key.TYPE.NORMAL) lastTap = null;
+                TraceTouch("ACCEPT", pointID, x, y, e.ToString());
+                CreateKeyInputEvent(key.GetName(), shiftIsActive, controlIsActive);
             }
             bool windowsIsActive = windowsKey != null && windowsKey.IsActive();
             if (windowsWasActive != windowsIsActive)
@@ -172,27 +206,25 @@ namespace TapBoard
         internal void Repeat()
         {
             if (inputLocked) return;
+            FlushTaps();
             foreach (Key key in keys)
             {
                 if (key.WantRepeat())
                 {
-                    lastTapKey = null;
+                    lastTap = null;
                     TraceTouch("REPEAT", 0, 0, 0, "");
                     CreateKeyInputEvent(key.GetName(), IsShiftKeyOn(), IsControlKeyOn());
                 }
             }
         }
 
-        private void CreateKeyInputEvent(string key, bool shift, bool control)
+        private KeyInputEventArgs CaptureInput(string key, bool shift, bool control)
         {
-            KeyInputEventArgs args = new KeyInputEventArgs();
-            args.key = key;
-            args.shift = shift;
-            args.control = control;
-            args.alt = alt != null && alt.IsActive();
-
-            OnKeyInput(args);
+            return new KeyInputEventArgs { key = key, shift = shift, control = control,
+                alt = alt != null && alt.IsActive(), windows = windowsKey != null && windowsKey.IsActive() };
         }
+        private void CreateKeyInputEvent(string key, bool shift, bool control)
+        { OnKeyInput(CaptureInput(key, shift, control)); }
 
         public event EventHandler<KeyInputEventArgs> KeyInput;
 
@@ -229,10 +261,10 @@ namespace TapBoard
                 CreateKeyInputEvent("{WIN_UP}", false, false);
             foreach (Key key in keys) key.CancelContact();
             ModifiersChanged?.Invoke(false, false, false);
-            characterShiftAtDown.Clear();
+            ClearPendingTaps();
             keyContacts.Clear();
             modifierContacts.Clear();
-            lastTapKey = null;
+            lastTap = null;
             inputLocked = false;
         }
         private void Reset()

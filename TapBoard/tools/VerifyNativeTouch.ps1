@@ -62,6 +62,10 @@ try {
     $k = @($keys | Where-Object { $_.GetName() -ceq '{k}' })[0]
     $locked = $controller.GetType().GetField('inputLocked', $flags)
     $events.Clear()
+    Packet @((Input $f 18 26),(Input $j 17 10))
+    Packet @((Input $j 17 4),(Input $f 18 20))
+    if (($events -join ',') -cne '{f},{j}') { throw 'Reverse-order lifts changed native press order' }
+    $events.Clear()
     Packet @((Input $f 20 26),(Input $j 21 10))
     Packet @((Input $k 22 10))
     if (-not $locked.GetValue($controller)) { throw 'Third distinct key did not lock' }

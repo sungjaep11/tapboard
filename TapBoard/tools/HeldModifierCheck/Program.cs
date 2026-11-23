@@ -13,15 +13,17 @@ internal static class Program
 
     private sealed class Rig : IDisposable
     {
-        internal readonly KeyboardInputController Controller = new KeyboardInputController(0, () => 0);
+        internal readonly KeyboardInputController Controller;
+        internal double Now;
         internal readonly HashSet<ushort> Physical = new HashSet<ushort>();
         internal readonly HashSet<ushort> Injected = new HashSet<ushort>();
         internal readonly List<string> Events = new List<string>();
         internal readonly WindowsKeyboardOutput Output;
         internal Func<WindowsKeyboardOutput.Input[], uint> Delivery;
 
-        internal Rig()
+        internal Rig(int minimumIntervalMs = 0)
         {
+            Controller = new KeyboardInputController(minimumIntervalMs, () => Now);
             Output = new WindowsKeyboardOutput(k => Physical.Contains(k) || Injected.Contains(k), inputs =>
             {
                 uint sent = Delivery == null ? (uint)inputs.Length : Delivery(inputs);
@@ -41,13 +43,16 @@ internal static class Program
         }
         internal Key Key(string label, int index = 0)
         { return Controller.keys.Where(k => k.GetLabel(false) == label).ElementAt(index); }
-        internal void Contact(string label, int id, KeyAreaEvent kind, int index = 0)
+        internal void Down(string label, int id, int index = 0)
         {
             Key key = Key(label, index);
-            Controller.DistributeEvent(kind, id, key.x + 10, key.y + 10);
+            Controller.TouchDown(id, new System.Drawing.Point(key.x + 10, key.y + 10));
         }
-        internal void Down(string label, int id, int index = 0) { Contact(label, id, KeyAreaEvent.TOUCH, index); }
-        internal void Up(string label, int id, int index = 0) { Contact(label, id, KeyAreaEvent.RELEASE, index); }
+        internal void Up(string label, int id, int index = 0)
+        {
+            Key key = Key(label, index);
+            Controller.DistributeEvent(KeyAreaEvent.RELEASE, id, key.x + 10, key.y + 10);
+        }
         internal void Tap(string label, int id) { Down(label, id); Up(label, id); }
         internal void Expect(string sequence)
         {
@@ -58,11 +63,95 @@ internal static class Program
         public void Dispose() { Output.Dispose(); }
     }
 
+    private static void CheckTapOrder()
+    {
+        using (var r = new Rig())
+        {
+            r.Down("a", 20); r.Down("b", 1);
+            r.Controller.DistributeEvent(KeyAreaEvent.MOVE, 20, -100, -100);
+            r.Up("b", 1);
+            r.Tap("c", 1); // Reuse the ID while the first B is waiting.
+            r.Controller.Repeat();
+            r.Expect("");
+            r.Up("a", 20); // The finger returned to its starting point.
+            r.Expect("41:0,41:2,42:0,42:2,43:0,43:2");
+
+            r.Down("a", 1); r.Down("Space", 2);
+            r.Up("a", 1);
+            r.Expect("41:0,41:2");
+            r.Up("Space", 2);
+            r.Expect("20:0,20:2");
+
+            r.Down("a", 1); r.Tap("b", 2);
+            r.Controller.DistributeEvent(KeyAreaEvent.RELEASE, 1, -100, -100);
+            r.Expect("42:0,42:2");
+
+            r.Down("a", 1); r.Down("Backspace", 2);
+            r.Expect("08:0,08:2");
+            r.Up("Backspace", 2); r.Up("a", 1);
+            r.Expect("41:0,41:2");
+        }
+        using (var r = new Rig())
+        {
+            r.Down("a", 1); r.Tap("b", 2);
+            r.Expect("");
+            System.Threading.Thread.Sleep(KeyboardSettings.Current.TapDurationMs + 20);
+            r.Controller.Repeat(); // No further touch event needed.
+            r.Expect("42:0,42:2");
+            r.Tap("c", 2);
+            r.Expect("43:0,43:2");
+            r.Up("a", 1);
+            r.Expect("");
+        }
+        using (var r = new Rig())
+        {
+            r.Down("a", 1); r.Tap("b", 2); r.Down("c", 3); r.Down("d", 4);
+            Check(r.Controller.IsLocked, "Third distinct key did not cancel buffered taps");
+            r.Up("a", 1); r.Up("c", 3); r.Up("d", 4);
+            r.Controller.Repeat();
+            r.Expect("");
+            r.Down("a", 1); r.Tap("b", 2);
+            r.Controller.CreateKeys(72, 1500);
+            r.Up("a", 1); r.Controller.Repeat(); r.Tap("c", 2);
+            r.Expect("43:0,43:2");
+        }
+        using (var r = new Rig(100))
+        {
+            // Reversed releases a debounce interval apart must both type.
+            r.Down("a", 1); r.Tap("a", 2);
+            r.Now = 100;
+            r.Up("a", 1);
+            r.Expect("41:0,41:2,41:0,41:2");
+            r.Now = 220;
+            r.Tap("a", 1);
+            r.Expect("41:0,41:2");
+            r.Now = 230;
+            r.Tap("a", 1);
+            r.Expect("");
+
+            r.Now = 400;
+            r.Down("a", 1); r.Down("b", 2); r.Up("a", 1); r.Tap("a", 3); r.Up("b", 2);
+            r.Expect("41:0,41:2,42:0,42:2,41:0,41:2");
+        }
+        using (var r = new Rig())
+        {
+            r.Down("a", 1); r.Down("Shift", 2); r.Down("Ctrl", 3); r.Down("Alt", 4); r.Down("Win", 5);
+            r.Tap("b", 6);
+            r.Up("Shift", 2); r.Up("Ctrl", 3); r.Up("Alt", 4); r.Up("Win", 5);
+            r.Expect("10:0,11:0,12:0,5B:1,10:2,11:2,12:2,5B:3");
+            r.Up("a", 1);
+            r.Expect("41:0,41:2,10:0,11:0,12:0,5B:1,42:0,42:2,10:2,11:2,12:2,5B:3");
+            Check(r.Injected.Count == 0, "Buffered shortcut left a modifier held");
+        }
+        Console.WriteLine("PASS: press-order taps, timeout, rejected releases, ID reuse, cancellation, debounce and modifier snapshots.");
+    }
+
     private static void Main()
     {
         // Instantaneous synthetic taps; production timing is checked separately.
         ConfigurationManager.AppSettings.Set("TapMinDurationMs", "0");
         ConfigurationManager.AppSettings.Set("ExperimentLogging", "false");
+        CheckTapOrder();
 
         using (var r = new Rig())
         {

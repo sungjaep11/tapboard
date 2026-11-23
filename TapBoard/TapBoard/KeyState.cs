@@ -14,6 +14,13 @@ namespace TapBoard
         private readonly RepeatSchedule repeatSchedule = new RepeatSchedule(
             KeyboardSettings.Current.RepeatDelayMs, KeyboardSettings.Current.RepeatIntervalMs);
 
+        internal Stroke GetTappingContact(int id)
+        {
+            Stroke contact;
+            tappingContacts.TryGetValue(id, out contact);
+            return contact;
+        }
+
         public bool IsActive()      // is pressed. 
         {
             return stroke != null || tappingContacts.Count != 0 || modifierContacts.Count != 0;

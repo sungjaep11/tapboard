@@ -10,7 +10,7 @@ namespace TapBoard
     {
         private const uint InputKeyboard = 1, KeyUp = 2, ExtendedKey = 1;
         private bool shiftDown, controlDown, altDown, windowsKeyDown;
-        private bool wantShift, wantControl, wantAlt;
+        private bool wantShift, wantControl, wantAlt, wantWindows;
         private bool disposed;
         private readonly Func<ushort, bool> isKeyDown;
         private readonly Func<Input[], uint> sendInputs;
@@ -33,15 +33,15 @@ namespace TapBoard
             wantShift = shift;
             wantControl = control;
             wantAlt = alt;
-            SynchronizeModifiers(wantShift);
+            SynchronizeModifiers(shift, control, alt);
         }
-        private bool SynchronizeModifiers(bool shift)
+        private bool SynchronizeModifiers(bool shift, bool control, bool alt)
         {
             // Keep injected ownership separate from GetAsyncKeyState: that API
             // includes our own injected downs, not just physical keyboard input.
             bool ready = SetHeldKey(0x10, shift, ref shiftDown);
-            ready &= SetHeldKey(0x11, wantControl, ref controlDown);
-            ready &= SetHeldKey(0x12, wantAlt, ref altDown);
+            ready &= SetHeldKey(0x11, control, ref controlDown);
+            ready &= SetHeldKey(0x12, alt, ref altDown);
             return ready;
         }
         private bool SetHeldKey(ushort key, bool down, ref bool owned, bool extended = false)
@@ -64,7 +64,8 @@ namespace TapBoard
             if (disposed) return false;
             if (args.key == "{WIN_DOWN}" || args.key == "{WIN_UP}")
             {
-                SetHeldKey(0x5B, args.key == "{WIN_DOWN}", ref windowsKeyDown, true);
+                wantWindows = args.key == "{WIN_DOWN}";
+                SetHeldKey(0x5B, wantWindows, ref windowsKeyDown, true);
                 return false;
             }
             if (args.key.Length == 0) return false;
@@ -74,7 +75,8 @@ namespace TapBoard
             if (inputs.Length == 0) return false;
             try
             {
-                if (!SynchronizeModifiers(args.shift)) return false;
+                if (!SynchronizeModifiers(args.shift, args.control, args.alt) ||
+                    !SetHeldKey(0x5B, args.windows, ref windowsKeyDown, true)) return false;
                 uint sent = sendInputs(inputs);
                 if (sent == 1) SendVirtualKey(inputs[0].data.keyboard.virtualKey, true,
                     (inputs[0].data.keyboard.flags & ExtendedKey) != 0);
@@ -82,15 +84,17 @@ namespace TapBoard
             }
             finally
             {
-                // A character can outlive its original Shift contact, or a new
-                // Shift contact can begin while the character is still pending.
-                if (args.shift != wantShift) SetHeldKey(0x10, wantShift, ref shiftDown);
+                // A buffered tap can outlive its modifiers. Restore the live
+                // finger holds even if delivery of the target key failed.
+                if (args.shift != wantShift || args.control != wantControl || args.alt != wantAlt)
+                    SynchronizeModifiers(wantShift, wantControl, wantAlt);
+                if (args.windows != wantWindows) SetHeldKey(0x5B, wantWindows, ref windowsKeyDown, true);
             }
         }
         public void Dispose()
         {
-            wantShift = wantControl = wantAlt = false;
-            SynchronizeModifiers(wantShift);
+            wantShift = wantControl = wantAlt = wantWindows = false;
+            SynchronizeModifiers(false, false, false);
             SetHeldKey(0x5B, false, ref windowsKeyDown, true);
             disposed = true;
         }

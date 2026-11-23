@@ -11,6 +11,7 @@ namespace TapBoard
         public bool shift;
         public bool control;
         public bool alt;
+        internal bool windows;
     }
 
 

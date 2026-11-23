@@ -10,9 +10,11 @@ Alternatively, run in PowerShell: Stop-Process -Name TapBoard
 
 INPUT BEHAVIOR
 
-Character and space keys commit on release only when the contact is at least
-10 ms and shorter than 300 ms and its release displacement is less than 60 pixels. Resting
-contacts do not type. Letters, digits and punctuation remember the on-screen
+Character and space keys qualify as taps when released after at least 10 ms
+and before 300 ms, less than 60 pixels from where the finger landed. Overlapping
+taps type in the order the fingers landed. If you press A then B and lift B
+first, B waits until A lifts or reaches the tap time limit. A resting finger
+can stay down while later taps type. Letters, digits and punctuation remember the on-screen
 Shift state at touch-down, even if Shift changes before the character lifts.
 Backspace and arrow keys activate immediately, wait 450 ms
 before the first repeat, then repeat every 100 ms while held. Release stops
