@@ -1,2 +1,8 @@
 .DS_Store
 /IRB/
+
+# Local ConvBoard IDE state, build output, and runnable copies.
+/ConvBoard/.vs/
+/ConvBoard/bin/
+/ConvBoard/obj/
+/ConvBoard/run/
