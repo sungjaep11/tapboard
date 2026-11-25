@@ -6,6 +6,7 @@ namespace TapBoard
 {
     internal static class NativeWindow
     {
+        internal const int IDC_ARROW = 32512;
         internal delegate IntPtr WindowProc(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
         private delegate bool MonitorProc(IntPtr monitor, IntPtr dc, IntPtr rect, IntPtr data);
 
@@ -54,6 +55,7 @@ namespace TapBoard
         [DllImport("shcore.dll")] internal static extern int SetProcessDpiAwareness(int awareness);
         [DllImport("user32.dll")] internal static extern int GetSystemMetrics(int index);
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] internal static extern IntPtr GetModuleHandle(string name);
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] internal static extern IntPtr LoadCursor(IntPtr instance, IntPtr resource);
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] internal static extern ushort RegisterClassEx(ref WindowClass wc);
         [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] internal static extern IntPtr CreateWindowEx(uint exStyle, string cls, string title, uint style, int x, int y, int width, int height, IntPtr parent, IntPtr menu, IntPtr instance, IntPtr arg);
         [DllImport("user32.dll")] internal static extern bool ShowWindow(IntPtr hwnd, int command);

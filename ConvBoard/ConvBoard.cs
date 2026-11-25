@@ -82,7 +82,9 @@ namespace TapBoard
                 throw new InvalidOperationException("키보드가 화면보다 큽니다. KeyboardDisplay와 DisplayWidthMm을 확인하세요.");
             input.CreateKeys(pitch,screen.Width);
             var instance=GetModuleHandle(null);
-            var wc=new WindowClass { size=(uint)Marshal.SizeOf(typeof(WindowClass)),className="ConvBoardKeyboard",callback=callback,instance=instance };
+            var arrow=LoadCursor(zero,new IntPtr(IDC_ARROW));
+            Require(arrow!=zero,"기본 마우스 커서를 불러올 수 없습니다.");
+            var wc=new WindowClass { size=(uint)Marshal.SizeOf(typeof(WindowClass)),className="ConvBoardKeyboard",callback=callback,instance=instance,cursor=arrow };
             Require(RegisterClassEx(ref wc)!=0,"ConvBoard 창 등록 실패");
             // WS_EX_TOPMOST | WS_EX_NOACTIVATE, WS_POPUP. Input stays with the upper screen.
             hwnd=CreateWindowEx(0x08000008,wc.className,"ConvBoard",0x80000000,
