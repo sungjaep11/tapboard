@@ -55,7 +55,7 @@ function lab(code,source='browser',journalKeyboard=null,autostart=true,direct=fa
   document.body=new Element();document.createElement=()=>new Element();document.createDocumentFragment=document.createElement;
   for(const match of html.matchAll(/\bid="([^"]+)"/g)) elements.set(match[1],new Element());
   document.getElementById=id=>elements.get(id);
-  for(const [id,value] of Object.entries({protocol:'paragraph',convSource:source,studyCondition:code,mapCondition:code,mapKind:'measured',widthMm:'310',nativeWidth:'1550',pitchMm:'19.5',paragraphText:'ab\ncd',participant:'P1',block:'1',trialKind:'measured',language:'en',restSeconds:'3',idleSeconds:'2',touchThreshold:'300'})) elements.get(id).value=value;
+  for(const [id,value] of Object.entries({protocol:'paragraph',convSource:source,studyCondition:code,mapCondition:code,mapKind:'measured',paragraphCount:'1',pitchMm:'19.5',paragraphText:'ab\ncd\nef',participant:'P1',block:'1',trialKind:'measured',language:'en',restSeconds:'3',idleSeconds:'2',touchThreshold:'300'})) elements.get(id).value=value;
   const ctx=vm.createContext({document,console,Intl,window:null,Element,performance:{now:()=>ctx.clock,timeOrigin:100000},
     sensorKeyboard:journalKeyboard ?? (source==='native' && ['A','B'].includes(code)?'ConvBoard':'TapBoard+'),clock:0,Date:class extends Date {static now(){return 100000+ctx.clock;}},
     setInterval:fn=>{timers.push(fn);},setTimeout:fn=>{fn();},clearInterval(){},crypto:require('node:crypto').webcrypto,
@@ -68,14 +68,14 @@ function lab(code,source='browser',journalKeyboard=null,autostart=true,direct=fa
   run(`db={transaction(){const tx={objectStore(){return {put(){queue(tx)}}}};return tx}};
        const queue=tx=>Promise.resolve().then(()=>tx.oncomplete());
        const j=new TapTouch.Journal();
-       j.feed(JSON.stringify({schema:'tapboard-touch/v1',type:'session',seq:0,t:0,sessionId:'s',keyboard:sensorKeyboard,widthPx:1550,pitchPx:98,startedUnixMs:100000})+'\\n');
+       j.feed(JSON.stringify({schema:'tapboard-touch/v1',type:'session',seq:0,t:0,sessionId:'s',keyboard:sensorKeyboard,widthPx:1280,pitchPx:81,startedUnixMs:100000})+'\\n');
        function feed(type,t,id=0,x=0,y=0){clock=t;const e={seq:j.lastSeq+1,type,t,id,x,y,keyType:'TAPPER'};
          if(type==='heartbeat')e.wallUnixMs=Date.now();j.feed(JSON.stringify(e)+'\\n');}
        feed('heartbeat',0);
        touchLink.journal=j;touchLink.handle={};touchLink.poll=async()=>{};
        conv.win={closed:false,document:{fullscreenElement:{}},innerHeight:900};
-       conv.settings=calibration();conv.geometry=P.geometry(1550,310,19.5,false);conv.journal=j;
-       function tick(type,t,id=0,x=0,y=0){feed(type,t,id,x,y);if(active){captureTouch(active,time());processStudyTouch();}}
+       conv.settings=calibration();conv.geometry=P.geometry(1280,310,19.5,false);conv.journal=j;
+       function tick(type,t,id=0,x=0,y=0){feed(type,t,id,x,y);if(active){captureTouch(active,time());processStudyTouch();advanceStudyTimer(time());}}
        function typeChar(c){if(browserTrial(active))convKey(c,false,false,'keydown',4);
          else {$('typing').value+=c;commitText('insertText');}}
        `);
@@ -89,9 +89,10 @@ test('paragraph setup previews editable sentences and explains blocked starts at
   assert.equal(elements.get('prompt').textContent,'first sentence');
   assert.match(elements.get('cueText').textContent,/연결/);
   assert.equal(run('active'),null);
-  run("touchLink.handle={};$('widthMm').value='';$('start').onclick()");
-  assert.match(elements.get('cueText').textContent,/가로 길이/);
-  run("$('widthMm').value='310';$('start').onclick()");
+  assert.equal(elements.has('widthMm'),false);assert.equal(elements.has('nativeWidth'),false);
+  run("touchLink.handle={};$('start').onclick()");
+  assert.equal(run('active.paragraph.geometry.widthMm'),310);
+  assert.equal(run('active.paragraph.geometry.widthPx'),1280);
   assert.equal(run('phase'),'hands_off');assert.equal(elements.get('prompt').textContent,'');
   run("tick('heartbeat',100);tick('down',120,1);tick('down',140,2);tick('up',160,1);tick('up',170,2);tick('heartbeat',200)");
   assert.equal(elements.get('prompt').textContent,'first sentence');
@@ -112,17 +113,24 @@ for(const code of ['A','B','C','D'])test(code+' standalone paragraph from hands-
   assert.equal(run('phase'),'typing');assert.equal(run('active.text'),'ab');
   run("tick('down',400,3,550,310);tick('move',600,3,565,310);tick('up',900,3,550,310);tick('heartbeat',950);clock=1000;submitSentence()");
   assert.equal(run('phase'),'inter_rest');assert.equal(elements.get('prompt').textContent||'','');
-  run("tick('down',1100,1);tick('down',1120,2);tick('heartbeat',2000);tick('heartbeat',3000);tick('up',3990,2);tick('down',4010,2);tick('heartbeat',4100);tick('heartbeat',5000);tick('heartbeat',6000);tick('heartbeat',7000)");
+  // The first rest has no contacts. The second has three, including a contact on Enter.
+  run("tick('heartbeat',2000);tick('heartbeat',3000);tick('heartbeat',3999)");
   assert.equal(run('phase'),'inter_rest');
-  run("tick('heartbeat',7020);tick('up',7030,1);tick('up',7040,2);clock=7100;typeChar('c');clock=7200;typeChar('d');tick('heartbeat',7300);submitSentence()");
+  run("tick('heartbeat',4000);clock=4100;typeChar('c');clock=4200;typeChar('d');tick('heartbeat',4300);submitSentence()");
+  assert.equal(run('phase'),'inter_rest');
+  run("tick('down',4400,1);tick('down',4420,2);tick('down',4440,3);tick('heartbeat',5300);tick('heartbeat',6300);tick('heartbeat',7299)");
+  assert.equal(run('phase'),'inter_rest');
+  run("tick('heartbeat',7300)");
+  assert.equal(run('phase'),'typing');
+  run("tick('up',7310,1);tick('up',7320,2);tick('up',7330,3);clock=7400;typeChar('e');clock=7500;typeChar('f');tick('heartbeat',7600);submitSentence()");
   await new Promise(resolve=>setImmediate(resolve));
-  assert.equal(run('records[0].status'),'completed');assert.equal(run('records[0].text'),'ab cd');
+  assert.equal(run('records[0].status'),'completed');assert.equal(run('records[0].text'),'ab cd ef');
   assert.equal(run('records[0].metrics.touch_quality'),'complete');assert.equal(run('P.strokes(records[0]).length'),1);
-  assert.equal(run('records[0].metrics.transcription_ms'),140);
+  assert.equal(run('records[0].metrics.transcription_ms'),240);
   assert.equal(elements.get('maps').hidden,false);
   run("let exported;download=(name,content)=>exported=content;exportData('json')");
   const trial=JSON.parse(run('exported')).trials[0];
-  assert.equal(trial.sentenceMetrics.length,2);assert.equal(trial.sentenceMetrics[1].first_text_after_cue_ms,80);
+  assert.equal(trial.sentenceMetrics.length,3);assert.equal(trial.sentenceMetrics[1].first_text_after_cue_ms,100);
   assert.equal(trial.paragraph.geometry.keys.length,79);assert.equal(trial.paragraph.condition,code);
   assert.equal(trial.explorationStrokes.length,1);
   assert.equal(trial.explorationStrokes[0].durationMs,500);
@@ -163,12 +171,14 @@ for(const code of ['A','B']) test(code+' Windows ConvBoard uses native geometry,
   const {run,elements}=lab(code,'native');
   assert.equal(run('phase'),'hands_off');
   assert.equal(run('active.paragraph.touchSource'),'windows-touch');
-  assert.equal(run('active.paragraph.geometry.pitchPx'),98);
+  assert.equal(run('active.paragraph.geometry.pitchPx'),81);
   run("tick('heartbeat',100);tick('down',130,1,530,280);tick('down',150,2,810,280);tick('up',170,1);tick('up',190,2);tick('heartbeat',250)");
   assert.equal(run('phase'),'typing');assert.equal(elements.get('typing').readOnly,false);
   run("clock=300;typeChar('a');tick('heartbeat',350);const handleEnter=()=>document.events.keydown[0]({target:$('typing'),key:'Enter',preventDefault(){}});handleEnter()");
   assert.equal(run('phase'),'inter_rest');
-  run("tick('down',400,1);tick('down',420,2);tick('heartbeat',1200);tick('heartbeat',2100);tick('heartbeat',3100);tick('heartbeat',3430);tick('up',3450,1);tick('up',3490,2);clock=3520;typeChar('c');tick('heartbeat',3600);handleEnter()");
+  run("tick('heartbeat',1200);tick('heartbeat',2100);tick('heartbeat',3100);tick('heartbeat',3350);clock=3420;typeChar('c');tick('heartbeat',3500);handleEnter()");
+  assert.equal(run('phase'),'inter_rest');
+  run("tick('heartbeat',4500);tick('heartbeat',5500);tick('heartbeat',6500);clock=6600;typeChar('e');tick('heartbeat',6700);handleEnter()");
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(run('records[0].touch.source'),'windows-touch');
   assert.equal(run('records[0].status'),'completed');assert.equal(run('records[0].metrics.touch_quality'),'complete');
@@ -201,4 +211,76 @@ test('the served standalone uses the direct feed to start, show a sentence and d
   await run("reply={session:{...j.meta,sessionId:'other'},seed:[],cursor:0,heartbeat:null};touchLink.poll()");
   run("captureTouch(active,time());processStudyTouch()");
   assert.equal(run('phase'),'fault');assert.equal(run('active.touch.sessionId'),'s');
+});
+
+function firstParagraph(run) {
+  run("tick('heartbeat',100);tick('down',120,1);tick('down',140,2);tick('up',160,1);tick('up',180,2);tick('heartbeat',200)");
+  run("clock=250;typeChar('a');tick('heartbeat',300);submitSentence();tick('heartbeat',1300);tick('heartbeat',2300);tick('heartbeat',3300)");
+  run("clock=3350;typeChar('c');tick('heartbeat',3400);submitSentence();tick('heartbeat',4400);tick('heartbeat',5400);tick('heartbeat',6400)");
+  run("clock=6450;typeChar('e');tick('heartbeat',6500);submitSentence()");
+}
+test('two paragraphs save separate records and wait five seconds before the next home-key cue',async()=>{
+  const {run,elements}=lab('C','native',null,false);
+  run("$('paragraphCount').value='2';$('paragraphCount').onchange();$('start').onclick()");
+  assert.equal(run('active.paragraph.count'),2);assert.equal(run('active.paragraph.number'),1);
+  firstParagraph(run);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('records.length'),1);assert.equal(run('records[0].status'),'completed');
+  assert.equal(run('active.paragraph.number'),2);assert.equal(run('phase'),'paragraph_rest');
+  assert.match(elements.get('cueText').textContent,/손/);
+  assert.equal(elements.get('typing').disabled,true);
+  run("tick('heartbeat',7500);tick('heartbeat',8500);tick('heartbeat',9500);tick('heartbeat',10500);tick('heartbeat',11499)");
+  assert.equal(run('phase'),'paragraph_rest');
+  run("tick('heartbeat',11500)");assert.equal(run('phase'),'hands_off');
+  run("tick('heartbeat',11510);tick('down',11520,1);tick('down',11540,2);tick('up',11560,1);tick('up',11580,2);tick('heartbeat',11600)");
+  assert.equal(run('phase'),'typing');
+  run("clock=11650;typeChar('x');tick('heartbeat',11700);submitSentence();tick('heartbeat',12700);tick('heartbeat',13700);tick('heartbeat',14700)");
+  run("clock=14750;typeChar('y');tick('heartbeat',14800);submitSentence();tick('heartbeat',15800);tick('heartbeat',16800);tick('heartbeat',17800)");
+  run("clock=17850;typeChar('z');tick('heartbeat',17900);submitSentence()");
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('active'),null);assert.equal(run('records.length'),2);assert.equal(run('studyRun'),null);
+  assert.equal(run('records[0].paragraph.runId'),run('records[1].paragraph.runId'));
+  assert.equal(run('records[1].paragraph.sentences.length'),3);
+  assert.equal(run('records[1].rests.find(r=>r.kind==="inter_paragraph").end-records[1].rests.find(r=>r.kind==="inter_paragraph").start'),5000);
+  assert.equal(run('records[1].metrics.touch_quality'),'complete');
+  run("let exported;download=(name,content)=>exported=content;exportData('json')");
+  const exported=JSON.parse(run('exported'));
+  assert.equal(exported.trials[1].paragraph.number,2);assert.equal(exported.trials[1].paragraph.count,2);
+});
+test('aborting the paragraph break stops the remaining run',async()=>{
+  const {run}=lab('A','native',null,false);
+  run("$('paragraphCount').value='3';$('paragraphCount').onchange();$('start').onclick()");
+  firstParagraph(run);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('phase'),'paragraph_rest');
+  await run("finish('aborted')");
+  run("tick('heartbeat',7500);tick('heartbeat',8500);tick('heartbeat',9500);tick('heartbeat',10500);tick('heartbeat',11500);tick('heartbeat',12500)");
+  assert.equal(run('active'),null);assert.equal(run('studyRun'),null);assert.equal(run('records.length'),2);
+  assert.equal(run('records[1].status'),'aborted');
+});
+test('paragraph count validates before starting and the full sentence list can be reviewed',()=>{
+  const {run,elements}=lab('C','native',null,false);
+  run("$('paragraphCount').value='0';$('start').onclick()");assert.equal(run('active'),null);
+  assert.match(elements.get('cueText').textContent,/문단/);
+  run("$('paragraphCount').value='2';$('paragraphCount').onchange()");
+  assert.equal(elements.get('paragraphText').value.split('\n').length,6);
+  assert.equal(elements.get('paragraphText').value.split('\n')[0],'ab');
+  run("$('paragraphCount').value='3';$('paragraphCount').onchange()");
+  assert.equal(new Set(elements.get('paragraphText').value.split('\n')).size,9);
+  run("$('start').onclick()");assert.equal(run('active.paragraph.sentences.length'),3);
+});
+
+test('failed automatic reconnection restores setup after the completed paragraph',async()=>{
+  const {run,elements}=lab('C','native',null,false);
+  run("$('paragraphCount').value='2';$('paragraphCount').onchange();$('start').onclick()");
+  firstParagraph(run);
+  run('touchLink.handle=null');
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('records.length'),1);
+  assert.equal(run('records[0].status'),'completed');
+  assert.equal(run('records[0].metrics.touch_quality'),'complete');
+  assert.equal(run('active'),null);assert.equal(run('studyRun'),null);
+  assert.equal(elements.get('paragraphSettings').hidden,false);
+  assert.equal(elements.get('settings').disabled,false);
+  assert.equal(elements.get('start').disabled,false);
+  assert.match(elements.get('cueText').textContent,/연결/);
 });

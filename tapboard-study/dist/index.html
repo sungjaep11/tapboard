@@ -23,11 +23,14 @@
 <label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 홈키 및 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
 <div id="paragraphSettings">
 <label for="studyCondition">실험 조건</label><select id="studyCondition"><option value="A">A · ConvBoard · 맨유리</option><option value="B">B · ConvBoard · 필름</option><option value="C" selected>C · TapBoard+ · 맨유리</option><option value="D">D · TapBoard+ · 필름</option></select>
-<label for="paragraphText">영어 문단 · 한 줄에 한 문장</label><textarea id="paragraphText" rows="3">the water is warm
+<label for="paragraphCount">진행할 문단 수</label><input id="paragraphCount" type="number" min="1" max="100" step="1" value="1" required>
+<p class="muted-text" id="paragraphPlan">1문단 · 총 3문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기</p>
+<label for="paragraphText">영어 목표 문장 · 한 줄에 한 문장</label><textarea id="paragraphText" rows="5">the water is warm
 we walk along the river
 the wind is still</textarea>
-<div class="field-row"><div><label for="widthMm">아래 화면 가로 (mm)</label><input id="widthMm" type="number" step="any" min="1" placeholder="실측값"></div><div><label for="pitchMm">키 간격 (mm)</label><input id="pitchMm" type="number" step="any" min="1" value="19.5"></div></div>
-<div id="nativeCalibration"><label for="nativeWidth">아래 화면 가로 해상도 (px) · 새 Windows 앱 자동</label><input id="nativeWidth" type="number" min="1" step="1" placeholder="Windows 디스플레이 해상도"><p class="muted-text">두 앱의 DisplayWidthMm과 KeyPitchMm을 위 값에 맞추세요. 새 Windows 앱은 해상도와 키 간격(px)을 자동으로 전달합니다.</p></div>
+<p class="muted-text">3문장씩 한 문단으로 진행합니다. 부족한 문장은 기본 영어 문장 세트에서 채웁니다.</p>
+<p class="muted-text">아래 화면 가로 310mm · 1280px</p>
+<label for="pitchMm">키 간격 (mm)</label><input id="pitchMm" type="number" step="any" min="1" value="19.5">
 <div id="convSetup" hidden><label for="convSource">ConvBoard 실행 방식</label><select id="convSource"><option value="native">Windows 앱 · ConvBoard.exe</option><option value="browser">브라우저 키보드 창</option></select><p class="muted-text">Windows 앱을 아래 화면에서 실행하고 위쪽에서 실험 페이지를 여세요.</p><div id="convBrowserSetup" hidden><button type="button" id="openConv" class="button secondary">아래 화면 ConvBoard 열기</button><p class="muted-text">아래 화면에서 전체 화면 버튼을 누르세요. 이 조건에서는 Windows 키보드 앱을 닫습니다.</p></div></div>
 </div>
 <div id="legacyCondition" hidden><label for="condition">키보드 조건</label><select id="condition"><option>Tapboard+</option><option>Tapboard+ · Overlay</option><option>일반 터치 키보드</option><option>물리 키보드</option><option>기타</option></select></div>
@@ -57,7 +60,7 @@ the wind is still</textarea>
 <article class="metric"><div>입력 속도 <span>WPM</span></div><strong id="wpm">—</strong><small>첫 문자 → 마지막 편집</small></article>
 <article class="metric"><div>문장 정확도 <span>%</span></div><strong id="accuracy">—</strong><small>전체 프롬프트 · 편집 거리 기준</small></article>
 <article class="metric"><div>첫 키 반응 <span>ms</span></div><strong id="latency">—</strong><small>입력 신호 → 첫 키 이벤트</small></article>
-<article class="metric"><div>지시된 레스팅 <span>sec</span></div><strong id="restMetric">0.0</strong><small>시작 전 + 수동 레스팅</small></article>
+<article class="metric"><div>지시된 레스팅 <span>sec</span></div><strong id="restMetric">0.0</strong><small>안내된 모든 휴식 구간</small></article>
 <article class="metric"><div>무입력 시간 <span>sec</span></div><strong id="idleMetric">0.0</strong><small>기준 이상 간격 · 레스팅 제외</small></article>
 </section>
 <section class="panel results">

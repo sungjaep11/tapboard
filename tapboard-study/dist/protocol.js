@@ -1,5 +1,6 @@
 const P=TapParagraph, conv=new ConvBoardWindow();
-let gate=null;
+let gate=null, studyRun=null;
+const displayWidthMm=310, displayWidthPx=1280, paragraphRestMs=5000;
 const integrated=()=>$('protocol').value==='paragraph';
 const isConv=()=>P.conditions[$('studyCondition').value].keyboard==='ConvBoard';
 const browserConv=()=>isConv() && $('convSource').value==='browser';
@@ -19,7 +20,7 @@ function setupProtocol() {
   $('typing').readOnly=false;
   $('paragraphSettings').hidden=!on;
   for(const el of ['legacyPrompt','legacyCondition','baselineSetup']) $(el).hidden=on;
-  $('convSetup').hidden=!isConv();$('convBrowserSetup').hidden=!browserConv();$('nativeCalibration').hidden=browserConv();
+  $('convSetup').hidden=!isConv();$('convBrowserSetup').hidden=!browserConv();
   $('nextPrompt').hidden=on;
   $('connectTouch').hidden=directStudy || on && browserConv();
   $('directPage').hidden=directStudy || on && browserConv();
@@ -31,7 +32,7 @@ function setupProtocol() {
   if(!active && !finalizing && on) {
     $('typing').value='';$('typing').disabled=true;
     previewParagraph();
-    setCue('문단 입력 준비','조건과 보정값을 설정한 뒤 로깅을 시작하세요.');
+    setCue('문단 입력 준비','조건과 문단 수를 선택한 뒤 로깅을 시작하세요.');
   } else if(!active && !finalizing) {showPractice();renderPrompt();}
 }
 function nativeHelp() {
@@ -41,74 +42,106 @@ function nativeHelp() {
 function paragraphLines() {
   return $('paragraphText').value.split(/\r?\n/).map(s=>s.trim().normalize('NFC')).filter(Boolean);
 }
+function requestedParagraphs() {
+  const count=$('paragraphCount').valueAsNumber;
+  if(!Number.isSafeInteger(count) || count<1 || count>100) throw new Error('진행할 문단 수를 1~100 사이의 정수로 입력하세요.');
+  return count;
+}
+function fillParagraphText() {
+  if(active || finalizing) return;
+  let count;
+  try {count=requestedParagraphs();} catch {previewParagraph();return;}
+  const lines=paragraphLines();
+  const needed=count*3;
+  const available=mackenziePhrases.filter(sentence=>!lines.includes(sentence));
+  for(let i=0;lines.length<needed;i++) lines.push(available[i]);
+  $('paragraphText').value=lines.join('\n');
+  previewParagraph();
+}
 function previewParagraph() {
   if(active || finalizing || !integrated()) return;
-  const lines=paragraphLines();
-  $('prompt').textContent=lines[0] || '왼쪽에 영어 목표 문장을 입력하세요.';
+  const lines=paragraphLines(), count=$('paragraphCount').valueAsNumber;
+  $('prompt').textContent=lines[0] || mackenziePhrases[0];
   $('progressLabel').textContent='';
-  $('phraseLabel').textContent='문단 미리보기 · '+lines.length+'문장';
+  $('phraseLabel').textContent='첫 문단 미리보기';
+  $('paragraphPlan').textContent=Number.isSafeInteger(count) && count>=1 && count<=100 ?
+    count+'문단 · 총 '+count*3+'문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기':'문단 수를 1~100 사이의 정수로 입력하세요.';
   $('progressBar').style.width='0%';
 }
-function calibration() {return {widthMm:$('widthMm').valueAsNumber,pitchMm:$('pitchMm').valueAsNumber};}
-function prepareParagraph() {
+function calibration() {return {widthMm:displayWidthMm,pitchMm:$('pitchMm').valueAsNumber};}
+function prepareStudyRun() {
+  const total=requestedParagraphs();
+  fillParagraphText();
+  const lines=paragraphLines();
+  return {id:id(),index:0,total,paragraphs:Array.from({length:total},(_,i)=>lines.slice(i*3,i*3+3))};
+}
+function prepareParagraph(run) {
   const code=$('studyCondition').value, c=P.conditions[code], settings=calibration();
-  const sentences=paragraphLines();
-  if(!sentences.length) throw new Error('영어 목표 문장을 한 줄에 하나씩 입력하세요.');
+  const sentences=run.paragraphs[run.index];
   let g;
   if(browserConv()) {
-    if(!conv.ready(settings)) throw new Error('보정값을 입력하고 아래 화면에서 ConvBoard 창을 전체 화면으로 여세요.');
+    if(!conv.ready(settings)) throw new Error('아래 화면에서 ConvBoard 창을 전체 화면으로 여세요.');
     g=conv.geometry;
   } else {
     const status=nativeStudyStatus();
     if(!status.ok) throw new Error(status.message+' · '+(directStudy?c.keyboard+' 앱과 선택한 조건을 확인하세요.':c.keyboard+' 앱의 직접 연결 페이지를 열거나 터치 로그를 연결하세요.'));
     const meta=touchLink.journal.meta;
-    if(!(settings.widthMm>0)) throw new Error('실험 설정에 아래 화면의 실제 가로 길이(mm)를 입력하세요.');
-    g=P.geometry(meta.widthPx || $('nativeWidth').valueAsNumber,settings.widthMm,settings.pitchMm,true,meta.pitchPx || null);
+    if(meta.widthPx && meta.widthPx!==displayWidthPx) throw new Error('키보드 화면의 가로 해상도가 '+meta.widthPx+'px입니다. Windows에서 아래 화면을 1280px로 설정하세요.');
+    g=P.geometry(displayWidthPx,settings.widthMm,settings.pitchMm,true,meta.pitchPx || null);
   }
-  return {...c,touchSource:browserConv()?'browser-pointer':'windows-touch',condition:code,geometry:g,home:[],phases:[],sentences:sentences.map((prompt,index)=>({
-    index,prompt,text:'',cueMs:null,submittedMs:null})),index:0,restMs:P.restMs,minDurationMs:P.minDurationMs,
+  return {...c,runId:run.id,number:run.index+1,count:run.total,
+    touchSource:browserConv()?'browser-pointer':'windows-touch',condition:code,geometry:g,home:[],phases:[],sentences:sentences.map((prompt,index)=>({
+    index,prompt,text:'',cueMs:null,submittedMs:null})),index:0,restMs:P.restMs,paragraphRestMs,
+    restPolicy:'timed',displayWidthPx,minDurationMs:P.minDurationMs,
     minPathMm:P.minPathMm,distanceDefinition:'sum of consecutive touch sample distances',handRule:'two index fingers only; left/right ordered by initial x'};
 }
+function paragraphProgress(p) {return '문단 '+p.number+' / '+p.count+' · 문장 '+(p.index+1)+' / '+p.sentences.length;}
 function studyPhase(name,description) {
   const p=active.paragraph;
   const boundary={name,t:time(),sentence:p.index};
   p.phases.push(boundary);logEvent('phase_change',boundary);
   setPhase(name);conv.typing=name==='typing' && browserTrial(active);
-  $('state').textContent=({hands_off:'손 떼기',home:'홈키 찾기',release:'손 들기',inter_rest:'3초 레스팅',typing:'문장 입력',fault:'수집 중단'})[name] || name;
+  $('state').textContent=({hands_off:'손 떼기',home:'홈키 찾기',release:'손 들기',inter_rest:'3초 휴식',paragraph_rest:'5초 손 떼기',typing:'문장 입력',fault:'수집 중단'})[name] || name;
   $('typing').readOnly=name==='typing' && browserTrial(active);
   $('typing').disabled=name!=='typing';$('rest').disabled=true;$('finish').disabled=true;
-  $('countdown').textContent='';$('phraseLabel').textContent='문장 '+(p.index+1)+' / '+p.sentences.length;
+  $('countdown').textContent='';$('phraseLabel').textContent=paragraphProgress(p);
   setCue($('state').textContent,description);
   renderPrompt();
   return boundary.t;
 }
 function startParagraph() {
   const p=active.paragraph;
-  gate={held:new Map(),lastSeq:-1,seeded:false,pair:null,restStart:null};
+  gate={held:new Map(),lastSeq:-1,seeded:false};
   conv.locked=browserTrial(active);conv.caps=false;
   logEvent('keyboard_geometry',{geometry:p.geometry,keyboard:p.keyboard,surface:p.surface});
   $('paragraphSettings').hidden=true;
-  studyPhase('hands_off','양손을 키보드 밖에 놓으세요.');
+  if(p.number>1) {
+    const start=studyPhase('paragraph_rest','양손을 키보드에서 떼고 5초 동안 쉬세요. 다음 문단을 준비합니다.');
+    active.rests.push({start,end:null,kind:'inter_paragraph'});
+    logEvent('rest_start',{kind:'inter_paragraph',plannedMs:paragraphRestMs});
+    $('countdown').textContent='5.0';
+  } else studyPhase('hands_off','양손을 키보드 밖에 놓으세요.');
 }
 function showSentence() {
   const p=active.paragraph, s=p.sentences[p.index];
   const open=active.rests.at(-1);
-  if(open && open.end===null) open.end=time();
+  if(open && open.end===null) {open.end=time();logEvent('rest_end',{kind:open.kind,duration_ms:open.end-open.start});}
   active.prompt=s.prompt;active.text='';$('typing').value='';
-  s.cueMs=studyPhase('typing','검지를 들고 문장을 입력하세요. Enter로 제출합니다.');
+  s.cueMs=studyPhase('typing','문장을 입력하세요. Enter로 제출합니다.');
   if(active.cueMs===null) active.cueMs=s.cueMs;
   logEvent('typing_cue',{prompt:s.prompt});
   if(!browserTrial(active)) $('typing').focus();
   persist(active);
 }
-function submitSentence(submitContact=null) {
+function submitSentence() {
   if(!active?.paragraph || phase!=='typing' || composing) return;
   const p=active.paragraph, s=p.sentences[p.index];
   commitText();s.text=active.text;s.submittedMs=time();logEvent('sentence_submit',{text:s.text});
   if(p.index+1===p.sentences.length) {finish();return;}
   p.index++;active.text='';active.prompt='';$('typing').value='';
-  gate.pair=null;gate.restStart=null;gate.submitContact=submitContact;
-  const start=studyPhase('inter_rest','양 검지만 가볍게 올리고 3초 동안 유지하세요.');
+  const start=studyPhase('inter_rest','3초 동안 쉬세요. 시간이 끝나면 다음 문장이 자동으로 나타납니다.');
+  $('countdown').textContent='3.0';
+  logEvent('rest_start',{kind:'inter_sentence',plannedMs:P.restMs});
   active.rests.push({start,end:null,kind:'inter_sentence'});
   persist(active);
 }
@@ -142,7 +175,6 @@ function processStudyTouch() {
       if(gate.held.has(e.id)) {studyFault('접촉 ID가 중복되었습니다.');return;}
       gate.held.set(e.id,e);
     }
-    if(e.type==='up' && e.id===gate.submitContact) gate.submitContact=null;
     if(e.type==='up' && !gate.held.delete(e.id)) {studyFault('시작이 없는 접촉이 감지되었습니다.');return;}
     if(e.type==='heartbeat') heartbeat=e;
     const boundary=p.phases.at(-1).t;
@@ -155,23 +187,6 @@ function processStudyTouch() {
         logEvent('home_pair',{points:p.home,bothCorrect:p.home.every(h=>h.correct)});
         studyPhase('release','두 검지를 제자리에서 들어 주세요. 첫 문장이 나타납니다.');
       }
-    } else if(phase==='inter_rest') {
-      const contacts=[...gate.held.values()];
-      const submitHeld=c=>p.keyboard==='ConvBoard' && !browserTrial(active) &&
-        c.t<=boundary && P.hit(p.geometry,c)?.label==='Enter';
-      const pair=contacts.length===2 && contacts.every(c=>c.id!==gate.submitContact && !submitHeld(c)) ? contacts.map(c=>c.seq).join(',') : null;
-      if(pair!==gate.pair) {
-        if(gate.pair!==null) logEvent('rest_contact_break',{sensorMs:e.t});
-        gate.pair=pair;
-        // A finger already on the board can rest across Enter. Removing a third
-        // contact starts a fresh two-finger interval at that release.
-        gate.restStart=pair===null?null:Math.max(boundary,...contacts.map(c=>c.t),e.type==='up'?e.t:0);
-        if(pair!==null) logEvent('rest_contact_start',{sensorMs:gate.restStart,contactSeqs:contacts.map(c=>c.seq)});
-      }
-      if(pair!==null && e.type==='heartbeat') {
-        const elapsed=e.t-gate.restStart;
-        $('countdown').textContent=(Math.max(0,P.restMs-elapsed)/1000).toFixed(1);
-      } else if(pair===null) $('countdown').textContent='3.0';
     }
   }
   // Use the most recent complete contact state in this poll before presenting a cue.
@@ -180,9 +195,20 @@ function processStudyTouch() {
     p.homeCueMs=studyPhase('home','키보드를 보지 않고 F와 J라고 생각하는 곳에 양 검지를 올리세요.');
   } else if(phase==='release' && gate.held.size===0) {
     showSentence();
-  } else if(phase==='inter_rest' && gate.restStart!==null && heartbeat.t-gate.restStart>=P.restMs) {
-    logEvent('rest_contact_complete',{startSensorMs:gate.restStart,endSensorMs:heartbeat.t});
-    showSentence();
+  }
+}
+function advanceStudyTimer(now=time()) {
+  if(!active?.paragraph || !['inter_rest','paragraph_rest'].includes(phase) || document.hidden) return;
+  const duration=phase==='inter_rest'?P.restMs:paragraphRestMs;
+  const left=Math.max(0,duration-(now-active.paragraph.phases.at(-1).t));
+  $('countdown').textContent=(left/1000).toFixed(1);
+  if(left>0) return;
+  if(phase==='inter_rest') showSentence();
+  else {
+    const rest=active.rests.at(-1);
+    rest.end=now;logEvent('rest_end',{kind:rest.kind,duration_ms:now-rest.start});
+    studyPhase('hands_off','양손을 키보드 밖에 놓으세요. 다음 홈키 신호를 기다리세요.');
+    persist(active);
   }
 }
 function convKey(label,shift,caps,type,contactId) {
@@ -202,7 +228,7 @@ function convKey(label,shift,caps,type,contactId) {
     f.setSelectionRange(caret,caret);return;
   }
   if(!edit) return;
-  if(key==='Enter') {submitSentence(contactId);return;}
+  if(key==='Enter') {submitSentence();return;}
   const field=$('typing');
   let start=field.selectionStart,end=field.selectionEnd;
   const deleting=key==='Backspace'||key==='Del';
@@ -217,6 +243,8 @@ function convKey(label,shift,caps,type,contactId) {
 function initStudyUI() {
   $('protocol').onchange=setupProtocol;
   $('paragraphText').oninput=previewParagraph;
+  $('paragraphCount').oninput=fillParagraphText;
+  $('paragraphCount').onchange=fillParagraphText;
   $('convSource').onchange=setupProtocol;
   $('studyCondition').onchange=()=>{$('mapCondition').value=$('studyCondition').value;setupProtocol();renderMaps();};
   $('openConv').onclick=()=>{
