@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>ConvBoard</AssemblyName>
+    <RootNamespace>TapBoard</RootNamespace>
+    <DefineConstants>$(DefineConstants);CONVBOARD</DefineConstants>
+    <AppConfig>ConvBoard.exe.config</AppConfig>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../TapBoard/TapBoard/Key.cs;../TapBoard/TapBoard/KeyDefinition.cs;../TapBoard/TapBoard/KeyState.cs;../TapBoard/TapBoard/Stroke.cs;../TapBoard/TapBoard/RepeatSchedule.cs;../TapBoard/TapBoard/KeyboardLayout.cs;../TapBoard/TapBoard/KeyboardTheme.cs;../TapBoard/TapBoard/KeyboardEvents.cs;../TapBoard/TapBoard/KeyboardSettings.cs;../TapBoard/TapBoard/KeyboardInputController.cs" />
+    <Compile Include="../TapBoard/TapBoard/TouchDiagnostics.cs;../TapBoard/TapBoard/TouchExperimentLog.cs;../TapBoard/TapBoard/WindowsKeyboardOutput.cs;../TapBoard/TapBoard/WindowsTouchInput.cs;../TapBoard/TapBoard/TouchGestureSettings.cs;../TapBoard/TapBoard/ClickMixer.cs;../TapBoard/TapBoard/ClickFeedback.cs;../TapBoard/TapBoard/ImeStateReader.cs;../TapBoard/TapBoard/TouchMouseFilter.cs" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+</Project>
