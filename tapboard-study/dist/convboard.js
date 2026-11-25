@@ -16,10 +16,10 @@ class ConvBoardWindow {
     setup.style.cssText='position:fixed;bottom:8px;right:10px;padding:10px;z-index:1';
     setup.onclick=()=>d.documentElement.requestFullscreen().catch(()=>{setup.textContent='전체 화면 전환을 다시 눌러 주세요';});
     d.body.replaceChildren(surface,setup);
-    const journal=new TapTouch.Journal(), startUnix=Date.now(), startPerf=performance.now();
+    const journal=new TapTouch.Journal(), recordedContacts=new Set(), startUnix=Date.now(), startPerf=performance.now();
     this.journal=journal;
     journal.feed(JSON.stringify({type:'session',schema:'tapboard-touch/v1',seq:0,t:0,
-      sessionId:'conv-'+crypto.randomUUID(),startedUnixMs:startUnix})+'\n');
+      sessionId:'conv-'+crypto.randomUUID(),startedUnixMs:startUnix,recordingPolicy:'contact-down-in-keyboard'})+'\n');
     const add=(type,data={},sampleMs=performance.now()-startPerf)=>{
       const row={type,seq:journal.lastSeq+1,t:Math.max(journal.lastT,sampleMs),...data};
       journal.feed(JSON.stringify(row)+'\n');
@@ -35,6 +35,7 @@ class ConvBoardWindow {
       const g=TapParagraph.geometry(w.innerWidth,settings.widthMm,settings.pitchMm,false);
       if(this.locked && (!this.fullscreen() || g.widthPx!==this.geometry.widthPx)) onFault('ConvBoard 화면 크기 또는 전체 화면 상태가 바뀌었습니다.');
       this.geometry=g;
+      journal.meta.recordingBounds={...g.recordingBounds};
       surface.replaceChildren();
       for(const k of g.keys) {
         const el=d.createElement('div');
@@ -57,18 +58,23 @@ class ConvBoardWindow {
       for(const sample of [...samples,e]) {
         const p={id,x:sample.clientX,y:sample.clientY};
         const k=TapParagraph.hit(this.geometry,p)?.label || '';
-        if(type==='down') this.contacts.set(id,k);
+        if(type==='down') {
+          this.contacts.set(id,k);
+          if(TapParagraph.withinKeyboard(this.geometry,p)) recordedContacts.add(id);
+          else recordedContacts.delete(id);
+        }
         const owner=this.contacts.get(id);
         const keyType=!owner?'BLANK':['Shift','Ctrl','Alt','Win'].includes(owner)?'MODIFIER':
           ['Backspace','↑','↓','←','→'].includes(owner)?'NORMAL':'TAPPER';
         const sampleMs=w.performance.timeOrigin+sample.timeStamp-performance.timeOrigin-startPerf;
-        add(type,{...p,keyType,key:owner},sampleMs);
+        if(recordedContacts.has(id)) add(type,{...p,keyType,key:owner},sampleMs);
         if(type==='down') {
           if(k==='Caps Lock' && this.typing) this.caps=!this.caps;
           if(this.typing && k) onKey(k,[...this.contacts.values()].includes('Shift'),this.caps,'keydown',id);
         } else if(type==='up') {
           if(this.typing && owner) onKey(owner,[...this.contacts.values()].includes('Shift'),this.caps,'keyup',id);
           this.contacts.delete(id);
+          recordedContacts.delete(id);
         }
       }
     };
@@ -76,7 +82,8 @@ class ConvBoardWindow {
       surface.addEventListener(name,e=>handle(e,type));
     const cancel=e=>{
       if(!this.contacts.has(e.pointerId)) return;
-      add('reset');this.contacts.clear();onFault('ConvBoard 터치 추적이 중단되었습니다.');
+      if(!recordedContacts.has(e.pointerId)) {this.contacts.delete(e.pointerId);return;}
+      add('reset');this.contacts.clear();recordedContacts.clear();onFault('ConvBoard 터치 추적이 중단되었습니다.');
     };
     surface.addEventListener('pointercancel',cancel);
     surface.addEventListener('lostpointercapture',cancel);

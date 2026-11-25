@@ -9,12 +9,14 @@ namespace TapBoard
     internal sealed class TouchDiagnostics
     {
         internal TouchExperimentLog Experiment { get; private set; }
-        internal void StartExperiment(string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, double widthMm = 0)
+        private Rectangle? recordingBounds;
+        internal void StartExperiment(string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, double widthMm = 0, Rectangle? bounds = null)
         {
+            recordingBounds = bounds;
             if (Experiment == null && KeyboardSettings.Current.ExperimentLogging)
                 Experiment = new TouchExperimentLog(System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx, KeyboardSettings.Current.DirectStudy, widthMm);
+                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx, KeyboardSettings.Current.DirectStudy, widthMm, bounds);
         }
         private readonly bool traceTouches;
         private readonly string destination;
@@ -30,6 +32,8 @@ namespace TapBoard
             if (stage == "LOCK" || stage == "UNLOCK" || stage == "ACCEPT" || stage == "REJECT_DUPLICATE" || stage == "NATIVE_ERROR")
                 Experiment?.Record(stage, id, x, y, "", detail);
             if (!traceTouches) return;
+            if (recordingBounds.HasValue && stage != "WM_TOUCH" && stage != "SEND" && stage != "REPEAT" && stage != "NATIVE_ERROR" &&
+                !recordingBounds.Value.Contains(x, y)) return;
             if (touchTrace.Count >= 10000) touchTrace.Dequeue();
             touchTrace.Enqueue(traceClock.Elapsed.TotalMilliseconds.ToString("F3",
                 System.Globalization.CultureInfo.InvariantCulture) + "," + stage + "," +

@@ -16,6 +16,13 @@ namespace TapBoard
         internal const double LayoutWidthUnits = 15;
         internal const double LayoutHeightUnits = 5.5;
 
+        internal static Rectangle RecordingBounds(int pitch, int availableWidth)
+        {
+            int width = (int)Math.Round(LayoutWidthUnits * pitch);
+            return new Rectangle((availableWidth - width) / 2, 0, width,
+                (int)Math.Round(LayoutHeightUnits * pitch));
+        }
+
         private Key AddKey(string code, string label, string shifted, double x, double y,
             double width = 1, double height = 1, Key.TYPE type = Key.TYPE.TAPPER,
             bool special = false, double hitHeightMultiplier = 1)
@@ -88,7 +95,7 @@ namespace TapBoard
             AddKey("{DOWN}", "↓", null, 13, 5, height: 0.5, type: Key.TYPE.NORMAL, special: true);
             AddKey("{RIGHT}", "→", null, 14, 5, height: 0.5, type: Key.TYPE.NORMAL, special: true);
 
-            int dx = (availableWidth - (int)Math.Round(LayoutWidthUnits * ppku)) / 2;
+            int dx = RecordingBounds(ppku, availableWidth).Left;
             foreach (Key key in keys) key.Move(dx, 0);
         }
 

@@ -20,15 +20,12 @@
 <div class="section-title"><span class="step">01</span><h2>실험 설정</h2><span class="small-label">SETUP</span></div>
 <fieldset id="settings"><legend class="sr-only">실험 설정</legend>
 <label for="participant">참가자 ID</label><input id="participant" value="P01" maxlength="80" autocomplete="off">
-<label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 홈키 및 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
+<label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
 <div id="paragraphSettings">
 <label for="studyCondition">실험 조건</label><select id="studyCondition"><option value="A">A · ConvBoard · 맨유리</option><option value="B">B · ConvBoard · 필름</option><option value="C" selected>C · TapBoard+ · 맨유리</option><option value="D">D · TapBoard+ · 필름</option></select>
 <label for="paragraphCount">진행할 문단 수</label><input id="paragraphCount" type="number" min="1" max="100" step="1" value="1" required>
-<p class="muted-text" id="paragraphPlan">1문단 · 총 3문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기</p>
-<label for="paragraphText">영어 목표 문장 · 한 줄에 한 문장</label><textarea id="paragraphText" rows="5">the water is warm
-we walk along the river
-the wind is still</textarea>
-<p class="muted-text">3문장씩 한 문단으로 진행합니다. 부족한 문장은 기본 영어 문장 세트에서 채웁니다.</p>
+<p class="muted-text" id="paragraphPlan">1문단 · 총 3문장 · 문단 시작 전 5초 준비 · 문장 사이 3초 휴식</p>
+<p class="muted-text">MacKenzie phrase set · 500문장을 순서대로 사용합니다. 한 문단은 3문장입니다.</p>
 <p id="displayCalibration" class="muted-text">키보드 연결 후 화면 보정값 자동 감지</p>
 <label for="pitchMm">키 간격 (mm)</label><input id="pitchMm" type="number" step="any" min="1" value="19.5">
 <div id="convSetup" hidden><label for="convSource">ConvBoard 실행 방식</label><select id="convSource"><option value="native">Windows 앱 · ConvBoard.exe</option><option value="browser">브라우저 키보드 창</option></select><p class="muted-text">Windows 앱을 아래 화면에서 실행하고 위쪽에서 실험 페이지를 여세요.</p><div id="convBrowserSetup" hidden><button type="button" id="openConv" class="button secondary">아래 화면 ConvBoard 열기</button><p class="muted-text">아래 화면에서 전체 화면 버튼을 누르세요. 이 조건에서는 Windows 키보드 앱을 닫습니다.</p></div></div>
@@ -48,7 +45,7 @@ the wind is still</textarea>
 <noscript>실험을 실행하려면 이 파일을 Chrome 또는 Edge로 열고 JavaScript를 허용하세요.</noscript>
 <div id="cue" class="cue" role="status"><span id="cueIcon">↳</span><div><strong id="cueTitle" tabindex="-1">실험 페이지 준비 중</strong><p id="cueText">이 안내가 계속 보이면 HTML 파일을 Chrome 또는 Edge에서 직접 여세요.</p></div><span id="countdown"></span></div>
 <div class="prompt-label">아래 문장을 그대로 입력하세요 <span id="progressLabel">0 / 0</span></div>
-<label for="typing" id="prompt" class="prompt">the water is warm</label>
+<label for="typing" id="prompt" class="prompt">my watch fell in the water</label>
 <textarea id="typing" class="typing" aria-label="따라 치기" aria-describedby="prompt" placeholder="여기에 따라 치세요" rows="1" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
 <div class="progress-track"><div id="progressBar"></div></div>
 <div class="input-caption"><span>공백·대소문자·문장부호를 포함합니다.</span><span>붙여넣기 차단 · 한글 IME 지원</span></div>
@@ -68,12 +65,12 @@ the wind is still</textarea>
 <div class="table-scroll"><table><thead><tr><th>회차 / 참가자</th><th>조건</th><th>상태</th><th>WPM</th><th>정확도</th><th>첫 키</th><th>지시 레스팅</th><th>실측 레스팅</th><th>상세</th></tr></thead><tbody id="records"></tbody></table></div>
 <div id="empty" class="empty"><span>⌨</span><strong>첫 번째 기록을 기다리고 있어요.</strong><p>설정을 확인한 뒤 로깅을 시작하세요. 완료한 회차가 여기에 쌓입니다.</p></div>
 </section>
-<section class="panel results" id="mapPanel"><div class="results-head"><h2>홈키와 탐색 지도</h2><div class="export-buttons"><select id="mapKind" aria-label="지도 측정 구분"><option value="measured">본 실험</option><option value="practice">연습</option></select><select id="mapCondition" aria-label="지도 조건"><option>A</option><option>B</option><option selected>C</option><option>D</option></select></div>
+<section class="panel results" id="mapPanel"><div class="results-head"><h2>탐색 지도</h2><div class="export-buttons"><select id="mapKind" aria-label="지도 측정 구분"><option value="measured">본 실험</option><option value="practice">연습</option></select><select id="mapCondition" aria-label="지도 조건"><option>A</option><option>B</option><option selected>C</option><option>D</option></select></div>
 </div><div class="export-buttons"><label class="button small secondary">전체 JSON에서 지도 열기 <input type="file" accept=".json,application/json" id="mapFile"></label><button class="button small secondary" id="localMaps" hidden>현재 기록 보기</button><span class="muted-text" id="mapSource"></span></div><p id="mapStatus" class="muted-text"></p><div id="maps" hidden>
-<h3>F·J 최초 접촉점</h3><canvas id="homeMap" width="1050" height="385" aria-label="두 검지 최초 접촉 분포"></canvas>
+<h3 id="homeMapTitle">이전 기록 · F·J 최초 접촉점</h3><canvas id="homeMap" width="1050" height="385" aria-label="두 검지 최초 접촉 분포"></canvas>
 <h3>문장 입력 중 탐색 경로</h3><canvas id="strokeMap" width="1050" height="385" aria-label="문장 입력 중 탐색 경로"></canvas>
 <button id="saveHome" class="button secondary">홈키 지도 PNG</button> <button id="saveStrokes" class="button secondary">탐색 지도 PNG</button></div></section>
-<details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 지시된 레스팅은 실제 접촉을 뜻하지 않습니다. 터치 로그 연결 시 실측 레스팅을 별도로 기록합니다. 실측은 키·빈 영역의 장시간 접촉 기준이며 손가락/손바닥이나 휴식 의도는 구분하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다. 터치 파일은 같은 PC에서 읽으며, 기록이 끊긴 구간은 실측에서 제외합니다. 직접 연결 페이지는 실행 중인 키보드 앱에 자동으로 다시 연결합니다.</p></div></div></details>
+<details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 지시된 레스팅은 실제 접촉을 뜻하지 않습니다. 터치 로그 연결 시 실측 레스팅을 별도로 기록합니다. 실측은 키보드 외곽 안에서 시작한 접촉을 대상으로 합니다. 아래쪽 손바닥 공간에서 시작한 접촉은 제외하며, 포함된 접촉은 손을 뗄 때까지 추적합니다. 키·빈 영역의 장시간 접촉을 세며 손가락/손바닥이나 휴식 의도는 구분하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다. 터치 파일은 같은 PC에서 읽으며, 기록이 끊긴 구간은 실측에서 제외합니다. 직접 연결 페이지는 실행 중인 키보드 앱에 자동으로 다시 연결합니다.</p></div></div></details>
 <footer><span>tapboard+ <b>RESEARCH TOOLS</b></span><span>Observe the interaction. Keep the evidence.</span></footer>
 </main>
 <dialog id="detail"><div class="dialog-head"><h2>회차 상세</h2><button id="closeDetail" class="button small secondary">닫기</button></div><div id="detailBody"></div></dialog>

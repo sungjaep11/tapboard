@@ -106,8 +106,13 @@ function geometry(widthPx, widthMm, pitchMm, native, recordedPitchPx=null) {
     label,x:left+px(x),y:px(y),w:px(x+w)-px(x),h:px(y+h)-px(y)
   }));
   return {widthPx,widthMm,pitchMm,pitchPx:pitch,effectivePitchMm:pitch*mmPerPx,mmPerPx,left,top:0,
-    coordinateSpace:native?'KeyArea client pixels':'ConvBoard CSS pixels',keys};
+    coordinateSpace:native?'KeyArea client pixels':'ConvBoard CSS pixels',
+    recordingBounds:{left,top:0,right:left+px(15),bottom:px(5.5)},keys};
 }
+const withinKeyboard = (g,p) => {
+  const b=g.recordingBounds;
+  return p.x>=b.left && p.x<b.right && p.y>=b.top && p.y<b.bottom;
+};
 const hit = (g,p) => g.keys.find(k => p.x>=k.x && p.x<k.x+k.w && p.y>=k.y && p.y<k.y+k.h);
 function homePoints(events,g) {
   return [...events].sort((a,b)=>a.x-b.x || a.seq-b.seq).map((p,i)=>{
@@ -169,7 +174,7 @@ function sentenceMetrics(trial, M) {
       ...m};
   });
 }
-const api={conditions,geometry,homePoints,phaseAt,strokes,strokeSummary,sentenceMetrics,hit,restMs,minDurationMs,minPathMm};
+const api={conditions,geometry,homePoints,phaseAt,strokes,strokeSummary,sentenceMetrics,hit,withinKeyboard,restMs,minDurationMs,minPathMm};
 root.TapParagraph=api;
 if(typeof module!=='undefined') module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,6 +1,6 @@
 let importedMaps=null;
 function renderMaps() {
-  $('mapPanel').hidden=!!active || finalizing;
+  $('mapPanel').hidden=!!active || !!pendingStart || finalizing;
   if($('mapPanel').hidden) return;
   const code=$('mapCondition').value, condition=TapParagraph.conditions[code];
   const source=importedMaps?.trials ?? records;
@@ -17,9 +17,12 @@ function renderMaps() {
   }
   const plots=valid.map(r=>({g:r.paragraph.geometry,home:r.paragraph.home,strokes:TapParagraph.strokes(r)}));
   const count=plots.reduce((n,p)=>n+p.strokes.length,0);
-  $('mapStatus').textContent=valid.length+'문단 · 탐색 '+count+'회 · 홈키는 왼쪽 검지(파랑), 오른쪽 검지(주황)'+note;
+  const hasHome=plots.some(p=>p.home.length);
+  for(const name of ['homeMapTitle','homeMap','saveHome']) $(name).hidden=!hasHome;
+  $('mapStatus').textContent=valid.length+'문단 · 탐색 '+count+'회'+(hasHome?' · 이전 홈키 기록: 왼쪽 검지(파랑), 오른쪽 검지(주황)':'')+note;
   const title=code+' · '+condition.keyboard+' · '+(condition.surface==='film'?'필름':'맨유리');
-  for(const kind of ['home','stroke']) drawStudyMap($(kind+'Map'),plots,kind,title);
+  if(hasHome) drawStudyMap($('homeMap'),plots,'home',title);
+  drawStudyMap($('strokeMap'),plots,'stroke',title);
 }
 function drawStudyMap(canvas,plots,kind,title) {
   const ctx=canvas.getContext('2d');

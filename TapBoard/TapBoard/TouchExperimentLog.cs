@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -19,6 +20,8 @@ namespace TapBoard
         private readonly Thread worker;
         private readonly StudyFeed feed;
         private readonly LocalStudyServer server;
+        private readonly Rectangle? recordingBounds;
+        private readonly Dictionary<int, bool> recordedContacts = new Dictionary<int, bool>();
         private bool stopping;
         private long sequence;
         private volatile string failure;
@@ -38,14 +41,17 @@ namespace TapBoard
             return text.Append('"').ToString();
         }
 
-        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, bool direct = false, double widthMm = 0)
+        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, bool direct = false, double widthMm = 0, Rectangle? bounds = null)
         {
+            recordingBounds = bounds;
+            string scope = bounds.HasValue ? ",\"recordingPolicy\":\"contact-down-in-keyboard\",\"recordingBounds\":{\"left\":" + bounds.Value.Left +
+                ",\"top\":" + bounds.Value.Top + ",\"right\":" + bounds.Value.Right + ",\"bottom\":" + bounds.Value.Bottom + "}" : "";
             double startedUnixMs = UnixNow() - clock.Elapsed.TotalMilliseconds;
             string header = "{\"schema\":\"tapboard-touch/v1\",\"type\":\"session\",\"seq\":0,\"t\":0,\"sessionId\":" +
                 Quote(SessionId) + ",\"keyboard\":" + Quote(keyboard) + ",\"widthPx\":" + widthPx +
                 (widthMm > 0 ? ",\"widthMm\":" + Number(widthMm) : "") +
                 ",\"pitchPx\":" + pitchPx + ",\"startedUnixMs\":" + Number(startedUnixMs) + ",\"activation\":" + Quote(keyboard == "ConvBoard" ? "touch-down" : "tap-release") +
-                ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + "}";
+                ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + scope + "}";
             if (direct)
             {
                 feed = new StudyFeed(SessionId, header);
@@ -59,11 +65,34 @@ namespace TapBoard
             worker.Start();
         }
 
+        private bool Includes(string type, int id, int x, int y)
+        {
+            if (!recordingBounds.HasValue) return true;
+            bool inside = recordingBounds.Value.Contains(x, y), include;
+            if (type == "down")
+            {
+                recordedContacts[id] = inside;
+                return inside;
+            }
+            if (type == "move" || type == "up")
+            {
+                // Keep the whole admitted gesture, including its release outside the
+                // keyboard. Never admit a palm that began below it by moving inside.
+                if (!recordedContacts.TryGetValue(id, out include)) include = inside;
+                if (type == "up") recordedContacts.Remove(id);
+                return include;
+            }
+            if (type == "LOCK" || type == "UNLOCK" || type == "ACCEPT" || type == "REJECT_DUPLICATE") return inside;
+            if (type == "reset" || type == "gap" || type == "end" || type == "NATIVE_ERROR") recordedContacts.Clear();
+            return true;
+        }
+
         internal void Record(string type, int id = 0, int x = 0, int y = 0, string keyType = "", string detail = "")
         {
             lock (gate)
             {
                 if (stopping || failure != null) return;
+                if (!Includes(type, id, x, y)) return;
                 if (pending.Count >= 16384)
                 {
                     failure = "Experiment log queue overflow; this recording is incomplete.";

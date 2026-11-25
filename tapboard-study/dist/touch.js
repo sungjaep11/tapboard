@@ -68,6 +68,7 @@
       const next=c.beats[through(c.beats)];
       if(next) events.push(next);
       return {schema:SCHEMA,sessionId:this.meta.sessionId,startedUnixMs:this.meta.startedUnixMs,
+        ...(this.meta.recordingPolicy?{recordingPolicy:this.meta.recordingPolicy,recordingBounds:this.meta.recordingBounds}:{}),
         ...(this.meta.keyboard?{keyboard:this.meta.keyboard,activation:this.meta.activation,
           nativeWidthPx:this.meta.widthPx,nativePitchPx:this.meta.pitchPx,
           ...(this.meta.widthMm>0?{nativeWidthMm:this.meta.widthMm}:{})}:{}),

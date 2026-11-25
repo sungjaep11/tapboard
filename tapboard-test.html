@@ -48,15 +48,12 @@
 <div class="section-title"><span class="step">01</span><h2>실험 설정</h2><span class="small-label">SETUP</span></div>
 <fieldset id="settings"><legend class="sr-only">실험 설정</legend>
 <label for="participant">참가자 ID</label><input id="participant" value="P01" maxlength="80" autocomplete="off">
-<label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 홈키 및 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
+<label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
 <div id="paragraphSettings">
 <label for="studyCondition">실험 조건</label><select id="studyCondition"><option value="A">A · ConvBoard · 맨유리</option><option value="B">B · ConvBoard · 필름</option><option value="C" selected>C · TapBoard+ · 맨유리</option><option value="D">D · TapBoard+ · 필름</option></select>
 <label for="paragraphCount">진행할 문단 수</label><input id="paragraphCount" type="number" min="1" max="100" step="1" value="1" required>
-<p class="muted-text" id="paragraphPlan">1문단 · 총 3문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기</p>
-<label for="paragraphText">영어 목표 문장 · 한 줄에 한 문장</label><textarea id="paragraphText" rows="5">the water is warm
-we walk along the river
-the wind is still</textarea>
-<p class="muted-text">3문장씩 한 문단으로 진행합니다. 부족한 문장은 기본 영어 문장 세트에서 채웁니다.</p>
+<p class="muted-text" id="paragraphPlan">1문단 · 총 3문장 · 문단 시작 전 5초 준비 · 문장 사이 3초 휴식</p>
+<p class="muted-text">MacKenzie phrase set · 500문장을 순서대로 사용합니다. 한 문단은 3문장입니다.</p>
 <p id="displayCalibration" class="muted-text">키보드 연결 후 화면 보정값 자동 감지</p>
 <label for="pitchMm">키 간격 (mm)</label><input id="pitchMm" type="number" step="any" min="1" value="19.5">
 <div id="convSetup" hidden><label for="convSource">ConvBoard 실행 방식</label><select id="convSource"><option value="native">Windows 앱 · ConvBoard.exe</option><option value="browser">브라우저 키보드 창</option></select><p class="muted-text">Windows 앱을 아래 화면에서 실행하고 위쪽에서 실험 페이지를 여세요.</p><div id="convBrowserSetup" hidden><button type="button" id="openConv" class="button secondary">아래 화면 ConvBoard 열기</button><p class="muted-text">아래 화면에서 전체 화면 버튼을 누르세요. 이 조건에서는 Windows 키보드 앱을 닫습니다.</p></div></div>
@@ -76,7 +73,7 @@ the wind is still</textarea>
 <noscript>실험을 실행하려면 이 파일을 Chrome 또는 Edge로 열고 JavaScript를 허용하세요.</noscript>
 <div id="cue" class="cue" role="status"><span id="cueIcon">↳</span><div><strong id="cueTitle" tabindex="-1">실험 페이지 준비 중</strong><p id="cueText">이 안내가 계속 보이면 HTML 파일을 Chrome 또는 Edge에서 직접 여세요.</p></div><span id="countdown"></span></div>
 <div class="prompt-label">아래 문장을 그대로 입력하세요 <span id="progressLabel">0 / 0</span></div>
-<label for="typing" id="prompt" class="prompt">the water is warm</label>
+<label for="typing" id="prompt" class="prompt">my watch fell in the water</label>
 <textarea id="typing" class="typing" aria-label="따라 치기" aria-describedby="prompt" placeholder="여기에 따라 치세요" rows="1" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"></textarea>
 <div class="progress-track"><div id="progressBar"></div></div>
 <div class="input-caption"><span>공백·대소문자·문장부호를 포함합니다.</span><span>붙여넣기 차단 · 한글 IME 지원</span></div>
@@ -96,12 +93,12 @@ the wind is still</textarea>
 <div class="table-scroll"><table><thead><tr><th>회차 / 참가자</th><th>조건</th><th>상태</th><th>WPM</th><th>정확도</th><th>첫 키</th><th>지시 레스팅</th><th>실측 레스팅</th><th>상세</th></tr></thead><tbody id="records"></tbody></table></div>
 <div id="empty" class="empty"><span>⌨</span><strong>첫 번째 기록을 기다리고 있어요.</strong><p>설정을 확인한 뒤 로깅을 시작하세요. 완료한 회차가 여기에 쌓입니다.</p></div>
 </section>
-<section class="panel results" id="mapPanel"><div class="results-head"><h2>홈키와 탐색 지도</h2><div class="export-buttons"><select id="mapKind" aria-label="지도 측정 구분"><option value="measured">본 실험</option><option value="practice">연습</option></select><select id="mapCondition" aria-label="지도 조건"><option>A</option><option>B</option><option selected>C</option><option>D</option></select></div>
+<section class="panel results" id="mapPanel"><div class="results-head"><h2>탐색 지도</h2><div class="export-buttons"><select id="mapKind" aria-label="지도 측정 구분"><option value="measured">본 실험</option><option value="practice">연습</option></select><select id="mapCondition" aria-label="지도 조건"><option>A</option><option>B</option><option selected>C</option><option>D</option></select></div>
 </div><div class="export-buttons"><label class="button small secondary">전체 JSON에서 지도 열기 <input type="file" accept=".json,application/json" id="mapFile"></label><button class="button small secondary" id="localMaps" hidden>현재 기록 보기</button><span class="muted-text" id="mapSource"></span></div><p id="mapStatus" class="muted-text"></p><div id="maps" hidden>
-<h3>F·J 최초 접촉점</h3><canvas id="homeMap" width="1050" height="385" aria-label="두 검지 최초 접촉 분포"></canvas>
+<h3 id="homeMapTitle">이전 기록 · F·J 최초 접촉점</h3><canvas id="homeMap" width="1050" height="385" aria-label="두 검지 최초 접촉 분포"></canvas>
 <h3>문장 입력 중 탐색 경로</h3><canvas id="strokeMap" width="1050" height="385" aria-label="문장 입력 중 탐색 경로"></canvas>
 <button id="saveHome" class="button secondary">홈키 지도 PNG</button> <button id="saveStrokes" class="button secondary">탐색 지도 PNG</button></div></section>
-<details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 지시된 레스팅은 실제 접촉을 뜻하지 않습니다. 터치 로그 연결 시 실측 레스팅을 별도로 기록합니다. 실측은 키·빈 영역의 장시간 접촉 기준이며 손가락/손바닥이나 휴식 의도는 구분하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다. 터치 파일은 같은 PC에서 읽으며, 기록이 끊긴 구간은 실측에서 제외합니다. 직접 연결 페이지는 실행 중인 키보드 앱에 자동으로 다시 연결합니다.</p></div></div></details>
+<details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 지시된 레스팅은 실제 접촉을 뜻하지 않습니다. 터치 로그 연결 시 실측 레스팅을 별도로 기록합니다. 실측은 키보드 외곽 안에서 시작한 접촉을 대상으로 합니다. 아래쪽 손바닥 공간에서 시작한 접촉은 제외하며, 포함된 접촉은 손을 뗄 때까지 추적합니다. 키·빈 영역의 장시간 접촉을 세며 손가락/손바닥이나 휴식 의도는 구분하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다. 터치 파일은 같은 PC에서 읽으며, 기록이 끊긴 구간은 실측에서 제외합니다. 직접 연결 페이지는 실행 중인 키보드 앱에 자동으로 다시 연결합니다.</p></div></div></details>
 <footer><span>tapboard+ <b>RESEARCH TOOLS</b></span><span>Observe the interaction. Keep the evidence.</span></footer>
 </main>
 <dialog id="detail"><div class="dialog-head"><h2>회차 상세</h2><button id="closeDetail" class="button small secondary">닫기</button></div><div id="detailBody"></div></dialog>
@@ -269,6 +266,7 @@ the wind is still</textarea>
       const next=c.beats[through(c.beats)];
       if(next) events.push(next);
       return {schema:SCHEMA,sessionId:this.meta.sessionId,startedUnixMs:this.meta.startedUnixMs,
+        ...(this.meta.recordingPolicy?{recordingPolicy:this.meta.recordingPolicy,recordingBounds:this.meta.recordingBounds}:{}),
         ...(this.meta.keyboard?{keyboard:this.meta.keyboard,activation:this.meta.activation,
           nativeWidthPx:this.meta.widthPx,nativePitchPx:this.meta.pitchPx,
           ...(this.meta.widthMm>0?{nativeWidthMm:this.meta.widthMm}:{})}:{}),
@@ -1043,8 +1041,13 @@ function geometry(widthPx, widthMm, pitchMm, native, recordedPitchPx=null) {
     label,x:left+px(x),y:px(y),w:px(x+w)-px(x),h:px(y+h)-px(y)
   }));
   return {widthPx,widthMm,pitchMm,pitchPx:pitch,effectivePitchMm:pitch*mmPerPx,mmPerPx,left,top:0,
-    coordinateSpace:native?'KeyArea client pixels':'ConvBoard CSS pixels',keys};
+    coordinateSpace:native?'KeyArea client pixels':'ConvBoard CSS pixels',
+    recordingBounds:{left,top:0,right:left+px(15),bottom:px(5.5)},keys};
 }
+const withinKeyboard = (g,p) => {
+  const b=g.recordingBounds;
+  return p.x>=b.left && p.x<b.right && p.y>=b.top && p.y<b.bottom;
+};
 const hit = (g,p) => g.keys.find(k => p.x>=k.x && p.x<k.x+k.w && p.y>=k.y && p.y<k.y+k.h);
 function homePoints(events,g) {
   return [...events].sort((a,b)=>a.x-b.x || a.seq-b.seq).map((p,i)=>{
@@ -1106,7 +1109,7 @@ function sentenceMetrics(trial, M) {
       ...m};
   });
 }
-const api={conditions,geometry,homePoints,phaseAt,strokes,strokeSummary,sentenceMetrics,hit,restMs,minDurationMs,minPathMm};
+const api={conditions,geometry,homePoints,phaseAt,strokes,strokeSummary,sentenceMetrics,hit,withinKeyboard,restMs,minDurationMs,minPathMm};
 root.TapParagraph=api;
 if(typeof module!=='undefined') module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
@@ -1128,10 +1131,10 @@ class ConvBoardWindow {
     setup.style.cssText='position:fixed;bottom:8px;right:10px;padding:10px;z-index:1';
     setup.onclick=()=>d.documentElement.requestFullscreen().catch(()=>{setup.textContent='전체 화면 전환을 다시 눌러 주세요';});
     d.body.replaceChildren(surface,setup);
-    const journal=new TapTouch.Journal(), startUnix=Date.now(), startPerf=performance.now();
+    const journal=new TapTouch.Journal(), recordedContacts=new Set(), startUnix=Date.now(), startPerf=performance.now();
     this.journal=journal;
     journal.feed(JSON.stringify({type:'session',schema:'tapboard-touch/v1',seq:0,t:0,
-      sessionId:'conv-'+crypto.randomUUID(),startedUnixMs:startUnix})+'\n');
+      sessionId:'conv-'+crypto.randomUUID(),startedUnixMs:startUnix,recordingPolicy:'contact-down-in-keyboard'})+'\n');
     const add=(type,data={},sampleMs=performance.now()-startPerf)=>{
       const row={type,seq:journal.lastSeq+1,t:Math.max(journal.lastT,sampleMs),...data};
       journal.feed(JSON.stringify(row)+'\n');
@@ -1147,6 +1150,7 @@ class ConvBoardWindow {
       const g=TapParagraph.geometry(w.innerWidth,settings.widthMm,settings.pitchMm,false);
       if(this.locked && (!this.fullscreen() || g.widthPx!==this.geometry.widthPx)) onFault('ConvBoard 화면 크기 또는 전체 화면 상태가 바뀌었습니다.');
       this.geometry=g;
+      journal.meta.recordingBounds={...g.recordingBounds};
       surface.replaceChildren();
       for(const k of g.keys) {
         const el=d.createElement('div');
@@ -1169,18 +1173,23 @@ class ConvBoardWindow {
       for(const sample of [...samples,e]) {
         const p={id,x:sample.clientX,y:sample.clientY};
         const k=TapParagraph.hit(this.geometry,p)?.label || '';
-        if(type==='down') this.contacts.set(id,k);
+        if(type==='down') {
+          this.contacts.set(id,k);
+          if(TapParagraph.withinKeyboard(this.geometry,p)) recordedContacts.add(id);
+          else recordedContacts.delete(id);
+        }
         const owner=this.contacts.get(id);
         const keyType=!owner?'BLANK':['Shift','Ctrl','Alt','Win'].includes(owner)?'MODIFIER':
           ['Backspace','↑','↓','←','→'].includes(owner)?'NORMAL':'TAPPER';
         const sampleMs=w.performance.timeOrigin+sample.timeStamp-performance.timeOrigin-startPerf;
-        add(type,{...p,keyType,key:owner},sampleMs);
+        if(recordedContacts.has(id)) add(type,{...p,keyType,key:owner},sampleMs);
         if(type==='down') {
           if(k==='Caps Lock' && this.typing) this.caps=!this.caps;
           if(this.typing && k) onKey(k,[...this.contacts.values()].includes('Shift'),this.caps,'keydown',id);
         } else if(type==='up') {
           if(this.typing && owner) onKey(owner,[...this.contacts.values()].includes('Shift'),this.caps,'keyup',id);
           this.contacts.delete(id);
+          recordedContacts.delete(id);
         }
       }
     };
@@ -1188,7 +1197,8 @@ class ConvBoardWindow {
       surface.addEventListener(name,e=>handle(e,type));
     const cancel=e=>{
       if(!this.contacts.has(e.pointerId)) return;
-      add('reset');this.contacts.clear();onFault('ConvBoard 터치 추적이 중단되었습니다.');
+      if(!recordedContacts.has(e.pointerId)) {this.contacts.delete(e.pointerId);return;}
+      add('reset');this.contacts.clear();recordedContacts.clear();onFault('ConvBoard 터치 추적이 중단되었습니다.');
     };
     surface.addEventListener('pointercancel',cancel);
     surface.addEventListener('lostpointercapture',cancel);
@@ -1207,7 +1217,7 @@ class ConvBoardWindow {
 }
 </script><script>let importedMaps=null;
 function renderMaps() {
-  $('mapPanel').hidden=!!active || finalizing;
+  $('mapPanel').hidden=!!active || !!pendingStart || finalizing;
   if($('mapPanel').hidden) return;
   const code=$('mapCondition').value, condition=TapParagraph.conditions[code];
   const source=importedMaps?.trials ?? records;
@@ -1224,9 +1234,12 @@ function renderMaps() {
   }
   const plots=valid.map(r=>({g:r.paragraph.geometry,home:r.paragraph.home,strokes:TapParagraph.strokes(r)}));
   const count=plots.reduce((n,p)=>n+p.strokes.length,0);
-  $('mapStatus').textContent=valid.length+'문단 · 탐색 '+count+'회 · 홈키는 왼쪽 검지(파랑), 오른쪽 검지(주황)'+note;
+  const hasHome=plots.some(p=>p.home.length);
+  for(const name of ['homeMapTitle','homeMap','saveHome']) $(name).hidden=!hasHome;
+  $('mapStatus').textContent=valid.length+'문단 · 탐색 '+count+'회'+(hasHome?' · 이전 홈키 기록: 왼쪽 검지(파랑), 오른쪽 검지(주황)':'')+note;
   const title=code+' · '+condition.keyboard+' · '+(condition.surface==='film'?'필름':'맨유리');
-  for(const kind of ['home','stroke']) drawStudyMap($(kind+'Map'),plots,kind,title);
+  if(hasHome) drawStudyMap($('homeMap'),plots,'home',title);
+  drawStudyMap($('strokeMap'),plots,'stroke',title);
 }
 function drawStudyMap(canvas,plots,kind,title) {
   const ctx=canvas.getContext('2d');
@@ -1266,9 +1279,9 @@ function drawStudyMap(canvas,plots,kind,title) {
   }
 }
 </script><script>const P=TapParagraph, conv=new ConvBoardWindow();
-let gate=null, studyRun=null;
+let studyTouchState=null, studyRun=null, paragraphPracticeIndex=0;
 // The browser-only keyboard uses this panel's reported visible width. Native apps send their own calibration.
-const browserDisplayWidthMm=302, paragraphRestMs=5000;
+const browserDisplayWidthMm=302, startCountdownMs=5000;
 const integrated=()=>$('protocol').value==='paragraph';
 const isConv=()=>P.conditions[$('studyCondition').value].keyboard==='ConvBoard';
 const browserConv=()=>isConv() && $('convSource').value==='browser';
@@ -1289,7 +1302,7 @@ function setupProtocol() {
   $('paragraphSettings').hidden=!on;
   for(const el of ['legacyPrompt','legacyCondition','baselineSetup']) $(el).hidden=on;
   $('convSetup').hidden=!isConv();$('convBrowserSetup').hidden=!browserConv();
-  $('nextPrompt').hidden=on;
+  $('nextPrompt').hidden=on && (!!active || !!pendingStart);
   $('connectTouch').hidden=directStudy || on && browserConv();
   $('directPage').hidden=directStudy || on && browserConv();
   $('touchSwitch').hidden=on;$('thresholdSetup').hidden=on;
@@ -1297,50 +1310,39 @@ function setupProtocol() {
     nativeHelp()):
     nativeHelp();
   renderTouchStatus();
-  if(!active && !finalizing && on) {
-    $('typing').value='';$('typing').disabled=true;
+  if(!active && !pendingStart && !finalizing && on) {
+    paragraphPracticeIndex=0;
+    $('typing').value='';$('typing').disabled=false;
+    if(phase!=='done') showPractice();
+    conv.typing=browserConv();
     previewParagraph();
-    setCue('문단 입력 준비','조건과 문단 수를 선택한 뒤 로깅을 시작하세요.');
-  } else if(!active && !finalizing) {showPractice();renderPrompt();}
+    setCue('바로 타이핑하세요','Enter로 다음 연습 문장으로 넘어갑니다. 로깅을 시작하면 5초 준비 후 첫 문단부터 기록합니다.');
+  } else if(!active && !pendingStart && !finalizing) {showPractice();renderPrompt();}
 }
 function nativeHelp() {
   return directStudy?'실행 중인 키보드 앱에 자동 연결합니다. 앱을 바꿀 때는 현재 회차를 마치고 기존 앱을 종료하세요.':
     '새 Windows 키보드 앱을 실행한 뒤 ‘앱 직접 연결’을 여세요. 파일 방식은 ‘터치 로그 연결’에서 기존 JSONL을 선택하세요.';
 }
-function paragraphLines() {
-  return $('paragraphText').value.split(/\r?\n/).map(s=>s.trim().normalize('NFC')).filter(Boolean);
+function paragraphPractice() {
+  const index=paragraphPracticeIndex%mackenziePhrases.length;
+  return {prompt:mackenziePhrases[index],index,total:mackenziePhrases.length};
 }
 function requestedParagraphs() {
   const count=$('paragraphCount').valueAsNumber;
   if(!Number.isSafeInteger(count) || count<1 || count>100) throw new Error('진행할 문단 수를 1~100 사이의 정수로 입력하세요.');
   return count;
 }
-function fillParagraphText() {
-  if(active || finalizing) return;
-  let count;
-  try {count=requestedParagraphs();} catch {previewParagraph();return;}
-  const lines=paragraphLines();
-  const needed=count*3;
-  const available=mackenziePhrases.filter(sentence=>!lines.includes(sentence));
-  for(let i=0;lines.length<needed;i++) lines.push(available[i]);
-  $('paragraphText').value=lines.join('\n');
-  previewParagraph();
-}
 function previewParagraph() {
-  if(active || finalizing || !integrated()) return;
-  const lines=paragraphLines(), count=$('paragraphCount').valueAsNumber;
-  $('prompt').textContent=lines[0] || mackenziePhrases[0];
-  $('progressLabel').textContent='';
-  $('phraseLabel').textContent='첫 문단 미리보기';
+  if(active || pendingStart || finalizing || !integrated()) return;
+  const count=$('paragraphCount').valueAsNumber;
   $('paragraphPlan').textContent=Number.isSafeInteger(count) && count>=1 && count<=100 ?
-    count+'문단 · 총 '+count*3+'문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기':'문단 수를 1~100 사이의 정수로 입력하세요.';
-  $('progressBar').style.width='0%';
+    count+'문단 · 총 '+count*3+'문장 · 문단 시작 전 5초 준비 · 문장 사이 3초 휴식':'문단 수를 1~100 사이의 정수로 입력하세요.';
+  renderPrompt();
 }
 function calibration() {return {widthMm:browserConv()?browserDisplayWidthMm:touchLink.journal.meta?.widthMm,pitchMm:$('pitchMm').valueAsNumber};}
 function prepareStudyRun() {
   const total=requestedParagraphs();
-  fillParagraphText();
-  const lines=paragraphLines();
+  const lines=mackenziePhrases.slice(0,total*3);
   return {id:id(),index:0,total,paragraphs:Array.from({length:total},(_,i)=>lines.slice(i*3,i*3+3))};
 }
 function prepareParagraph(run) {
@@ -1363,9 +1365,49 @@ function prepareParagraph(run) {
   }
   return {...c,runId:run.id,number:run.index+1,count:run.total,
     touchSource:browserConv()?'browser-pointer':'windows-touch',condition:code,geometry:g,home:[],phases:[],sentences:sentences.map((prompt,index)=>({
-    index,prompt,text:'',cueMs:null,submittedMs:null})),index:0,restMs:P.restMs,paragraphRestMs,
+    index,prompt,text:'',cueMs:null,submittedMs:null})),index:0,restMs:P.restMs,startCountdownMs,homeTask:'none',
     restPolicy:'timed',displayWidthPx:g.widthPx,minDurationMs:P.minDurationMs,
-    minPathMm:P.minPathMm,distanceDefinition:'sum of consecutive touch sample distances',handRule:'two index fingers only; left/right ordered by initial x'};
+    minPathMm:P.minPathMm,distanceDefinition:'sum of consecutive touch sample distances'};
+}
+function startCountdown(paragraph,prompt) {
+  pendingStart={paragraph,prompt,deadline:performance.now()+startCountdownMs,
+    sourceSessionId:studyLink({paragraph}).journal.meta.sessionId};
+  composing=false;$('typing').value='';
+  conv.locked=browserTrial(pendingStart);conv.typing=false;conv.caps=false;
+  setPhase('countdown');
+  $('paragraphSettings').hidden=true;
+  $('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
+  $('elapsed').textContent='00:00.0';
+  for(const name of ['wpm','accuracy','latency']) $(name).textContent='—';
+  for(const name of ['restMetric','idleMetric']) $(name).textContent='0.0';
+  $('physicalRest').textContent='— s';
+  setCue('5초 뒤 시작합니다','손을 키보드에서 떼고 기다려 주세요. 타이머가 끝나면 문장이 나타나고 기록을 시작합니다.','Ⅱ',true);
+  $('countdown').textContent='5';
+  renderPrompt();renderRecords();
+}
+function cancelStart(message='') {
+  pendingStart=null;studyRun=null;conv.locked=false;conv.typing=false;
+  composing=false;$('typing').value='';$('countdown').textContent='';
+  setPhase('ready');setupProtocol();renderRecords();
+  if(message) startProblem(message);
+  else setCue('시작을 취소했습니다','준비 시간은 기록되지 않았습니다. 바로 연습하거나 로깅을 다시 시작할 수 있습니다.');
+}
+function advanceStartCountdown() {
+  if(!pendingStart) return;
+  if(document.hidden) {cancelStart('실험 화면이 숨겨져 시작을 취소했습니다. 화면을 열고 다시 시작하세요.');return;}
+  const left=Math.max(0,pendingStart.deadline-performance.now());
+  $('countdown').textContent=String(Math.ceil(left/1000));
+  if(left>0) return;
+  const prepared=pendingStart;
+  try {
+    // Recheck the keyboard after preparation; never record against a changed source.
+    const paragraph=prepareParagraph(studyRun), journal=studyLink(prepared).journal;
+    if(journal.meta.sessionId!==prepared.sourceSessionId || journal.integrityFault || journal.error || journal.ended)
+      throw new Error('준비 중 키보드 연결이 바뀌거나 끊겼습니다. 연결을 확인하고 다시 시작하세요.');
+    prepared.paragraph=paragraph;
+  } catch(error) {cancelStart(error.message);return;}
+  pendingStart=null;
+  beginRecording(prepared.paragraph,prepared.prompt);
 }
 function paragraphProgress(p) {return '문단 '+p.number+' / '+p.count+' · 문장 '+(p.index+1)+' / '+p.sentences.length;}
 function studyPhase(name,description) {
@@ -1373,7 +1415,7 @@ function studyPhase(name,description) {
   const boundary={name,t:time(),sentence:p.index};
   p.phases.push(boundary);logEvent('phase_change',boundary);
   setPhase(name);conv.typing=name==='typing' && browserTrial(active);
-  $('state').textContent=({hands_off:'손 떼기',home:'홈키 찾기',release:'손 들기',inter_rest:'3초 휴식',paragraph_rest:'5초 손 떼기',typing:'문장 입력',fault:'수집 중단'})[name] || name;
+  $('state').textContent=({inter_rest:'3초 휴식',typing:'문장 입력',fault:'수집 중단'})[name] || name;
   $('typing').readOnly=name==='typing' && browserTrial(active);
   $('typing').disabled=name!=='typing';$('rest').disabled=true;$('finish').disabled=true;
   $('countdown').textContent='';$('phraseLabel').textContent=paragraphProgress(p);
@@ -1383,23 +1425,18 @@ function studyPhase(name,description) {
 }
 function startParagraph() {
   const p=active.paragraph;
-  gate={held:new Map(),lastSeq:-1,seeded:false};
+  studyTouchState={held:new Map(),lastSeq:-1,seeded:false};
   conv.locked=browserTrial(active);conv.caps=false;
   logEvent('keyboard_geometry',{geometry:p.geometry,keyboard:p.keyboard,surface:p.surface});
   $('paragraphSettings').hidden=true;
-  if(p.number>1) {
-    const start=studyPhase('paragraph_rest','양손을 키보드에서 떼고 5초 동안 쉬세요. 다음 문단을 준비합니다.');
-    active.rests.push({start,end:null,kind:'inter_paragraph'});
-    logEvent('rest_start',{kind:'inter_paragraph',plannedMs:paragraphRestMs});
-    $('countdown').textContent='5.0';
-  } else studyPhase('hands_off','양손을 키보드 밖에 놓으세요.');
+  showSentence();
 }
 function showSentence() {
   const p=active.paragraph, s=p.sentences[p.index];
   const open=active.rests.at(-1);
   if(open && open.end===null) {open.end=time();logEvent('rest_end',{kind:open.kind,duration_ms:open.end-open.start});}
   active.prompt=s.prompt;active.text='';$('typing').value='';
-  s.cueMs=studyPhase('typing','문장을 입력하세요. Enter로 제출합니다.');
+  s.cueMs=studyPhase('typing','문장을 정확히 다 입력한 뒤 스페이스바로 넘기세요. Enter로도 제출할 수 있습니다.');
   if(active.cueMs===null) active.cueMs=s.cueMs;
   logEvent('typing_cue',{prompt:s.prompt});
   if(!browserTrial(active)) $('typing').focus();
@@ -1418,13 +1455,14 @@ function submitSentence() {
   persist(active);
 }
 function studyFault(message) {
+  if(pendingStart) {cancelStart(message+' 준비를 취소했습니다. 연결을 확인하고 다시 시작하세요.');return;}
   if(!active?.paragraph || phase==='fault') return;
   logEvent('touch_failure',{message});active.paragraph.failure=message;
   studyPhase('fault',message+' 중단을 눌러 현재 기록을 저장하세요.');persist(active);
 }
 function processStudyTouch() {
   if(!active?.paragraph || phase==='fault') return;
-  const p=active.paragraph, touch=active.touch;
+  const touch=active.touch, gate=studyTouchState;
   if(!touch) return;
   if((browserTrial(active) && (!conv.win || conv.win.closed)) ||
       (!browserTrial(active) && !touchLink.status().ok) || studyLink(active).journal.integrityFault || touch.invalidFromMs!=null) {
@@ -1436,7 +1474,6 @@ function processStudyTouch() {
     for(const e of touch.seed) gate.held.set(e.id,e);
     gate.seeded=true;
   }
-  let heartbeat=null;
   for(const e of touch.events) {
     if(e.seq<=gate.lastSeq || e.t>time()) continue;
     gate.lastSeq=e.seq;
@@ -1448,43 +1485,19 @@ function processStudyTouch() {
       gate.held.set(e.id,e);
     }
     if(e.type==='up' && !gate.held.delete(e.id)) {studyFault('시작이 없는 접촉이 감지되었습니다.');return;}
-    if(e.type==='heartbeat') heartbeat=e;
-    const boundary=p.phases.at(-1).t;
-    if(e.t<boundary || document.hidden) continue;
-    if(phase==='home' && e.type==='down') {
-      // Preserve the first two distinct landings, including wrong or blank locations.
-      if(!gate.first) gate.first=e;
-      else {
-        p.home=P.homePoints([gate.first,e],p.geometry);
-        logEvent('home_pair',{points:p.home,bothCorrect:p.home.every(h=>h.correct)});
-        studyPhase('release','두 검지를 제자리에서 들어 주세요. 첫 문장이 나타납니다.');
-      }
-    }
-  }
-  // Use the most recent complete contact state in this poll before presenting a cue.
-  if(!heartbeat || heartbeat.t<p.phases.at(-1).t || document.hidden) return;
-  if(phase==='hands_off' && gate.held.size===0) {
-    p.homeCueMs=studyPhase('home','키보드를 보지 않고 F와 J라고 생각하는 곳에 양 검지를 올리세요.');
-  } else if(phase==='release' && gate.held.size===0) {
-    showSentence();
   }
 }
 function advanceStudyTimer(now=time()) {
-  if(!active?.paragraph || !['inter_rest','paragraph_rest'].includes(phase) || document.hidden) return;
-  const duration=phase==='inter_rest'?P.restMs:paragraphRestMs;
-  const left=Math.max(0,duration-(now-active.paragraph.phases.at(-1).t));
+  if(!active?.paragraph || phase!=='inter_rest' || document.hidden) return;
+  const left=Math.max(0,P.restMs-(now-active.paragraph.phases.at(-1).t));
   $('countdown').textContent=(left/1000).toFixed(1);
   if(left>0) return;
-  if(phase==='inter_rest') showSentence();
-  else {
-    const rest=active.rests.at(-1);
-    rest.end=now;logEvent('rest_end',{kind:rest.kind,duration_ms:now-rest.start});
-    studyPhase('hands_off','양손을 키보드 밖에 놓으세요. 다음 홈키 신호를 기다리세요.');
-    persist(active);
-  }
+  showSentence();
 }
 function convKey(label,shift,caps,type,contactId) {
-  if(!active?.paragraph || phase!=='typing' || !conv.typing) return;
+  const practicing=!active && !pendingStart && !finalizing && integrated() && browserConv();
+  if(!conv.typing || !practicing && (!active?.paragraph || phase!=='typing')) return;
+  if(practicing && phase==='done') showPractice();
   const plain="`1234567890-=[]\\;',./", shifted='~!@#$%^&*()_+{}|:"<>?';
   let key=label;
   if(/^[a-z]$/.test(key)) key=shift!==caps?key.toUpperCase():key;
@@ -1500,9 +1513,12 @@ function convKey(label,shift,caps,type,contactId) {
     f.setSelectionRange(caret,caret);return;
   }
   if(!edit) return;
-  if(key==='Enter') {submitSentence();return;}
+  if(key==='Enter') {if(practicing) nextPrompt();else submitSentence();return;}
   const field=$('typing');
   let start=field.selectionStart,end=field.selectionEnd;
+  if(key===' ' && !shift && !composing && promptCompleteAtEnd(field,practicing?promptText():active.prompt)) {
+    if(practicing) nextPrompt();else submitSentence();return;
+  }
   const deleting=key==='Backspace'||key==='Del';
   if(deleting && start===end) {
     if(key==='Backspace') start=Math.max(0,start-1);
@@ -1514,13 +1530,12 @@ function convKey(label,shift,caps,type,contactId) {
 }
 function initStudyUI() {
   $('protocol').onchange=setupProtocol;
-  $('paragraphText').oninput=previewParagraph;
-  $('paragraphCount').oninput=fillParagraphText;
-  $('paragraphCount').onchange=fillParagraphText;
+  $('paragraphCount').oninput=previewParagraph;
+  $('paragraphCount').onchange=previewParagraph;
   $('convSource').onchange=setupProtocol;
   $('studyCondition').onchange=()=>{$('mapCondition').value=$('studyCondition').value;setupProtocol();renderMaps();};
   $('openConv').onclick=()=>{
-    try {const s=calibration();P.geometry(1000,s.widthMm,s.pitchMm,false);conv.open(s,convKey,studyFault);}
+    try {const s=calibration();P.geometry(1000,s.widthMm,s.pitchMm,false);conv.open(s,convKey,studyFault);conv.typing=!active && !pendingStart && !finalizing;}
     catch(e){notify(e.message);}
   };
   $('mapCondition').onchange=renderMaps;
@@ -1545,12 +1560,16 @@ function initStudyUI() {
   for(const [button,canvas,kind] of [['saveHome','homeMap','home'],['saveStrokes','strokeMap','strokes']])
     $(button).onclick=()=>$(canvas).toBlob(blob=>{if(blob)download('tapboard-'+$('mapCondition').value+'-'+kind+'.png',blob,'image/png');});
   document.addEventListener('keydown',e=>{
+    if(pendingStart) {if(e.target!==$('abort')) e.preventDefault();return;}
     if(!active?.paragraph || composing || e.isComposing || e.keyCode===229) return;
-    if(phase==='typing' && !browserTrial(active) && e.target===$('typing') && e.key==='Enter') {
-      e.preventDefault();if(!e.repeat) submitSentence();
+    if(phase==='typing' && !browserTrial(active) && e.target===$('typing')) {
+      const space=e.key===' ' && !(e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) &&
+        (promptCompleteAtEnd($('typing'),active.prompt) || e.repeat && $('typing').value==='');
+      if(e.key==='Enter' || space) {e.preventDefault();if(!e.repeat) submitSentence();}
     } else if(phase!=='typing' && e.target!==$('abort')) e.preventDefault();
   });
   document.addEventListener('visibilitychange',()=>{
+    if(document.hidden && pendingStart) cancelStart('실험 화면이 숨겨져 시작을 취소했습니다. 화면을 열고 다시 시작하세요.');
     if(document.hidden && active?.paragraph) studyFault('실험 화면이 숨겨졌습니다.');
   });
   window.addEventListener('pagehide',()=>{if(conv.win && !conv.win.closed) conv.win.close();});
@@ -1559,7 +1578,7 @@ function initStudyUI() {
 </script><script>'use strict';
 const $ = id => document.getElementById(id), M = TapMetrics, T = TapTouch;
 const directStudy = globalThis.location?.origin === 'http://127.0.0.1:47831';
-const touchLink = directStudy ? new T.LocalLink(() => !!(active?.config.touchEnabled && !browserTrial(active)) || finalizing) : new T.FileLink();
+const touchLink = directStudy ? new T.LocalLink(() => !!(active?.config.touchEnabled && !browserTrial(active)) || !!(pendingStart && !browserTrial(pendingStart)) || finalizing) : new T.FileLink();
 let finalizing = false;
 function summary(trial, now = trial.endMs ?? trial.lastSavedMs ?? 0) {
   const touch=T.summarize(trial.touch,now);
@@ -1595,16 +1614,17 @@ function renderTouchStatus() {
   $('displayCalibration').textContent=Number.isSafeInteger(width) && width>0 && Number.isFinite(widthMm) && widthMm>0?
     '화면 보정 폭 '+widthMm+'mm · 가로 '+width+' '+units:'키보드 연결 후 화면 보정값 자동 감지';
 }
-const VERSION = '1.5.2', SCHEMA = 'tapboard-study/v1';
+const VERSION = '1.6.2', SCHEMA = 'tapboard-study/v1';
 const phrases = {
   en: mackenziePhrases,
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
 };
-let records = [], active = null, origin = 0, phase = 'ready', phraseIndex = 0;
+let records = [], active = null, pendingStart = null, origin = 0, phase = 'ready', phraseIndex = 0;
 let composing = false, db = null, saveQueue = Promise.resolve(), renderedAt = 0, storageBroken = false;
 const fmt = (n, digits=1) => n == null || !Number.isFinite(n) ? '—' : n.toLocaleString('en-US',{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const time = () => Math.round((performance.now()-origin)*1000)/1000;
-const promptText = () => $('language').value==='custom' ? $('customPrompt').value : phrases[$('language').value][phraseIndex % phrases[$('language').value].length];
+const promptText = () => integrated()?paragraphPractice().prompt:$('language').value==='custom' ? $('customPrompt').value : phrases[$('language').value][phraseIndex % phrases[$('language').value].length];
+const promptCompleteAtEnd = (input,prompt) => input.selectionStart===input.value.length && input.selectionEnd===input.value.length && input.value.normalize('NFC')===prompt.normalize('NFC');
 const notify = s => { $('notice').textContent=s; $('notice').hidden=false; };
 const id = () => globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
 function logEvent(type, data={}) {
@@ -1651,8 +1671,8 @@ function loadDB() {
   });
 }
 function renderPrompt() {
-  const paragraph=active?.paragraph;
-  const visiblePrompt=paragraph && phase!=='typing'?'':active?.prompt ?? promptText();
+  const paragraph=active?.paragraph ?? pendingStart?.paragraph;
+  const visiblePrompt=pendingStart || paragraph && phase!=='typing'?'':active?.prompt ?? promptText();
   const target = M.chars(visiblePrompt), typed = M.chars($('typing').value);
   const fragment=document.createDocumentFragment();
   target.forEach((c,i)=>{
@@ -1665,6 +1685,7 @@ function renderPrompt() {
   $('progressLabel').textContent=`${typed.length} / ${length}`;
   $('progressBar').style.width=`${Math.min(100,length?typed.length/length*100:0)}%`;
   if(paragraph) { $('phraseLabel').textContent=paragraphProgress(paragraph);return; }
+  if(integrated()) {const p=paragraphPractice();$('phraseLabel').textContent='MacKenzie · '+(p.index+1)+' / '+p.total;return;}
   $('phraseLabel').textContent=$('language').value==='custom'?'CUSTOM':`${$('language').value==='ko'?'한국어':'ENGLISH'} / ${String(phraseIndex+1).padStart(2,'0')}`;
 }
 function setCue(title,description,icon='↳',resting=false) {
@@ -1672,20 +1693,23 @@ function setCue(title,description,icon='↳',resting=false) {
 }
 function setPhase(next) {
   phase=next;
-  const running=!!active;
-  $('state').textContent=({ready:'자유 연습',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:finalizing?'저장 중':'회차 종료'})[next];
+  const running=!!active || !!pendingStart;
+  $('state').textContent=({ready:'자유 연습',countdown:'5초 준비',baseline:'레스팅 중',typing:'기록 중',rest:'레스팅 중',done:finalizing?'저장 중':'회차 종료'})[next];
   $('state').classList.toggle('active',running);
   for (const name of ['connectTouch','touchEnabled','touchThreshold']) $(name).disabled=running||finalizing;
   $('settings').disabled=running||finalizing; $('start').disabled=running||finalizing; $('nextPrompt').disabled=running||finalizing;
+  $('nextPrompt').hidden=integrated() && running;
   $('rest').disabled=!['typing','rest'].includes(next); $('finish').disabled=!['typing','rest'].includes(next); $('abort').disabled=!running;
   $('rest').textContent=next==='rest'?'▶ 입력 재개':'Ⅱ 레스팅';
-  $('typing').disabled=finalizing || next==='baseline' || next==='rest';
-  $('recordingDot').classList.toggle('live-dot',running);
-  $('recordingStatus').textContent=running?'이 회차의 이벤트를 기록하고 있습니다':storageBroken?'저장 실패 · 파일로 내보내세요':'기록 대기 중';
+  $('typing').disabled=finalizing || next==='countdown' || next==='baseline' || next==='rest';
+  $('recordingDot').classList.toggle('live-dot',!!active);
+  $('recordingStatus').textContent=pendingStart?'준비 중 · 타이머가 끝나면 기록을 시작합니다':active?'이 회차의 이벤트를 기록하고 있습니다':storageBroken?'저장 실패 · 파일로 내보내세요':'기록 대기 중';
   $('start').innerHTML=next==='done'?'<span>●</span> 다음 회차 시작':'<span>●</span> 로깅 시작';
 }
 function showPractice() {
   setPhase('ready');
+  $('typing').readOnly=false;
+  conv.typing=integrated() && browserConv();
   setCue('바로 타이핑하세요','기본 문장 세트에서는 Enter로 다음 문장으로 넘어갑니다. 문장을 정확히 다 치면 스페이스바로도 넘어갈 수 있습니다.');
   $('trialLabel').textContent=`TRIAL ${String(records.length+1).padStart(2,'0')}`;
   for (const name of ['wpm','accuracy','latency']) $(name).textContent='—';
@@ -1704,7 +1728,7 @@ function startProblem(message) {
   $('cueTitle').focus();
 }
 function start() {
-  if (active || finalizing) return;
+  if (active || pendingStart || finalizing) return;
   let paragraph=null, run=null;
   if(integrated()) {
     try {run=studyRun || prepareStudyRun();paragraph=prepareParagraph(run);} catch(error) {startProblem(error.message);return;}
@@ -1719,6 +1743,10 @@ function start() {
   if (!prompt.trim()) {notify('입력할 문장을 먼저 작성하세요.');return;}
   studyRun=run;
   $('notice').hidden=true;
+  if(paragraph) {startCountdown(paragraph,prompt);return;}
+  beginRecording(paragraph,prompt);
+}
+function beginRecording(paragraph,prompt) {
   origin=performance.now();composing=false;$('typing').value='';$('countdown').textContent='';
   active={schema:SCHEMA,version:VERSION,id:id(),sessionId:sessionId,trial:records.length+1,
     participant:$('participant').value.trim(),condition:paragraph?.condition ?? $('condition').value,block:Number($('block').value),
@@ -1761,6 +1789,7 @@ function commitText(inputType='') {
   }
 }
 async function finish(status='completed') {
+  if(pendingStart) {cancelStart();return;}
   if (!active) return;
   if (composing) {notify('한글 조합을 확정한 뒤 회차를 완료하세요.');$('typing').focus();return;}
   commitText();
@@ -1798,7 +1827,7 @@ async function finish(status='completed') {
   if(ended.paragraph && status==='completed' && ended.metrics.touch_quality==='complete' && studyRun && studyRun.index+1<studyRun.total) {
     studyRun.index++;
     start();
-    if(active) return;
+    if(active || pendingStart) return;
     const message=$('cueText').textContent;
     studyRun=null;setPhase('done');setupProtocol();renderRecords();startProblem(message);return;
   }
@@ -1845,7 +1874,7 @@ function showDetail(r) {
   for(const [name,text] of [['프롬프트',r.prompt],['입력 결과',r.text],['조건 메모',r.notes]]){const label=document.createElement('h3'),p=document.createElement('p');label.textContent=name;p.className='detail-text';p.textContent=text||'—';body.append(label,p);}
   if(r.paragraph) {
     const info=document.createElement('p');
-    info.textContent='홈키 접촉 '+r.paragraph.home.map(h=>h.target.toUpperCase()+' → '+(h.actual??'빈 영역')+' ('+fmt(h.deviationMm)+' mm)').join(', ');
+    info.textContent=r.paragraph.home.length?'홈키 접촉 '+r.paragraph.home.map(h=>h.target.toUpperCase()+' → '+(h.actual??'빈 영역')+' ('+fmt(h.deviationMm)+' mm)').join(', '):r.paragraph.homeTask==='none'?'5초 준비 후 기록 시작 · 홈키 찾기 생략':'홈키 접촉 미수집';
     body.append(info);
     for(const s of P.sentenceMetrics(r,M)){
       const line=document.createElement('p');
@@ -1866,7 +1895,7 @@ function exportData(kind) {
   if(active) logEvent('export',{kind});
   const all=snapshotRecords(),stamp=new Date().toISOString().replace(/[:.]/g,'-');
   if(!all.length){notify('내보낼 기록이 없습니다.');return;}
-  if(kind==='json')return download(`tapboard-${stamp}.json`,JSON.stringify({schema:SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),definitions:{paragraph:'keyboard geometry in source pixels; hand assignment by first landing x; three sentences per paragraph; automatic 3000 ms rests between sentences and a 5000 ms hands-off instruction before each subsequent paragraph; legacy records retain their original rest policy; completed strokes entirely within a typing phase with duration >400 ms and cumulative length >1.9 mm; paragraph WPM pooled over individual sentence editing intervals',physicalRest:'union of sustained TAPPER/BLANK contacts after threshold, clipped to trial and heartbeat-covered intervals; modifier/repeating keys excluded; incomplete coverage explicitly marked',touchClock:'same-PC UTC anchors, monotonic elapsed time; native and browser clock jumps over 50ms flagged; 250ms polling affects display only',rest:'instructed intervals; not physical contact detection',wpm:'max(0,NFC character count - 1) / 5 / minutes(first insertion to last committed edit); rests included',accuracy:'100 * (1 - Levenshtein(target, text) / max(length(target), length(text)))',idle:'full typing-key gaps >= threshold, excluding instructed rest intervals',timestamps:'monotonic milliseconds from trial start; UTC anchored to trial start',ime:'composition snapshots retained; text commits counted after composition',storage:'local browser; active checkpoints approximately every 1 second'},trials:all.map(r=>r.paragraph?{...r,sentenceMetrics:P.sentenceMetrics(r,M),explorationStrokes:P.strokeSummary(r)}:r)},null,2),'application/json');
+  if(kind==='json')return download(`tapboard-${stamp}.json`,JSON.stringify({schema:SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),definitions:{paragraph:'keyboard geometry in source pixels; three sentences per paragraph; 5000 ms preparation before every paragraph, excluded from the trial; recording and the first typing cue start together after preparation; no home-key acquisition; automatic 3000 ms recorded rests between sentences; legacy records retain their original home-key and rest policies; completed strokes entirely within a typing phase with duration >400 ms and cumulative length >1.9 mm; paragraph WPM pooled over individual sentence editing intervals',physicalRest:'new keyboard sources admit contacts by down position inside the visible keyboard rectangle and retain the complete gesture; recordingBounds/recordingPolicy identify the scope; union of sustained TAPPER/BLANK contacts after threshold, clipped to trial and heartbeat-covered intervals; modifier/repeating keys excluded; incomplete coverage explicitly marked',touchClock:'same-PC UTC anchors, monotonic elapsed time; native and browser clock jumps over 50ms flagged; 250ms polling affects display only',rest:'instructed intervals; not physical contact detection',wpm:'max(0,NFC character count - 1) / 5 / minutes(first insertion to last committed edit); rests included',accuracy:'100 * (1 - Levenshtein(target, text) / max(length(target), length(text)))',idle:'full typing-key gaps >= threshold, excluding instructed rest intervals',timestamps:'monotonic milliseconds from trial start; UTC anchored to trial start',ime:'composition snapshots retained; text commits counted after composition',storage:'local browser; active checkpoints approximately every 1 second'},trials:all.map(r=>r.paragraph?{...r,sentenceMetrics:P.sentenceMetrics(r,M),explorationStrokes:P.strokeSummary(r)}:r)},null,2),'application/json');
   const rows=kind==='summary'?all.map(r=>{
     const {idle_intervals,physical_rest_intervals,touch_coverage_intervals,touch_issues,...metrics}=r.metrics||summary(r);
     return {schema:r.schema,trial_id:r.id,session_id:r.sessionId,participant:r.participant,condition:r.condition,keyboard:r.paragraph?.keyboard,surface:r.paragraph?.surface,run_id:r.paragraph?.runId,paragraph_number:r.paragraph?.number,paragraph_count:r.paragraph?.count,block:r.block,trial:r.trial,kind:r.kind,status:r.status,language:r.language,started_at:r.startedAt,ended_at:r.endedAt,timezone:r.timezone,prompt:r.prompt,transcription:r.text,notes:r.notes,idle_threshold_ms:r.config.idleMs,baseline_rest_ms:r.config.restMs,...metrics,...(r.paragraph?{home_left_target_mm:r.paragraph.home[0]?.deviationMm,
@@ -1878,11 +1907,11 @@ function exportData(kind) {
 const sessionId=id();
 if(directStudy) $('touchEnabled').checked=true;
 $('connectTouch').onclick=async()=>{
-  if(active||finalizing)return;
+  if(active||pendingStart||finalizing)return;
   $('start').disabled=true;$('connectTouch').disabled=true;
   try {await touchLink.choose();$('touchEnabled').checked=true;renderTouchStatus();if(touchLink.failure)notify(touchLink.failure);}
   catch(error){if(error.name!=='AbortError')notify(error.message);}
-  finally{$('connectTouch').disabled=!!active||finalizing;$('start').disabled=!!active||finalizing;}
+  finally{$('connectTouch').disabled=!!active||!!pendingStart||finalizing;$('start').disabled=!!active||!!pendingStart||finalizing;}
 };
 setInterval(async()=>{
   await touchLink.poll();renderTouchStatus();
@@ -1903,20 +1932,23 @@ $('language').onchange=()=>{
 };
 $('customPrompt').oninput=resetPracticeText;
 function nextPrompt() {
-  if($('language').value==='custom'){$('customPrompt').focus();return;}
-  phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;
+  if(active || pendingStart || finalizing) return;
+  if(integrated()) paragraphPracticeIndex++;
+  else {
+    if($('language').value==='custom'){$('customPrompt').focus();return;}
+    phraseIndex=(phraseIndex+1)%phrases[$('language').value].length;
+  }
   resetPracticeText();
   $('typing').focus();
 }
 $('nextPrompt').onclick=nextPrompt;
 $('typing').addEventListener('keydown', e=>{
-  if (active || finalizing || $('language').value==='custom') return;
+  if (active || pendingStart || finalizing || !integrated() && $('language').value==='custom') return;
   if (composing || e.isComposing || e.keyCode===229 || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
   if (e.key!=='Enter' && e.key!==' ') return;
   const input=e.currentTarget;
   if (e.key===' ' && !(e.repeat && input.value==='')) {
-    if (input.selectionStart!==input.value.length || input.selectionEnd!==input.value.length) return;
-    if (input.value.normalize('NFC')!==promptText().normalize('NFC')) return;
+    if (!promptCompleteAtEnd(input,promptText())) return;
   }
   e.preventDefault();
   if (!e.repeat) nextPrompt();
@@ -1946,6 +1978,7 @@ window.addEventListener('focus',()=>logEvent('window_focus'));
 document.addEventListener('visibilitychange',()=>{logEvent(document.hidden?'hidden':'visible');if(active)persist(active);});
 window.addEventListener('beforeunload',e=>{if(active||finalizing){if(active){logEvent('unload_attempt');persist(active);}e.preventDefault();e.returnValue='';}});
 setInterval(()=>{
+  advanceStartCountdown();
   if(!active)return;
   const now=time();
   // Only show the cue when the participant can actually see it. Background time remains logged.
