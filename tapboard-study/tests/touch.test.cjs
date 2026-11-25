@@ -66,3 +66,16 @@ test('zero sensor coverage is missing, not zero measured rest',()=>{
  const m=summarize(j.capture(1000000,1000,300),1000);
  assert.equal(m.physical_rest_ms,null);assert.equal(m.touch_coverage_pct,0);
 });
+test('incremental capture incorporates late pre-trial contact data and supports earlier cutoffs',()=>{
+ const j=journal(hb(100));
+ const initial=j.capture(1000200,10,300);
+ assert.equal(initial.seed.length,0);
+ const append=e=>j.feed(JSON.stringify({seq:j.lastSeq+1,id:2,x:5,y:8,keyType:'TAPPER',...e})+'\n');
+ append({type:'down',t:180});append({type:'heartbeat',t:210,wallUnixMs:1000210});
+ append({type:'up',t:240});append({type:'heartbeat',t:300,wallUnixMs:1000300});
+ const later=j.capture(1000200,90,300),earlier=j.capture(1000200,5,300);
+ assert.equal(later.seed[0].t,-20);assert.ok(later.events.some(e=>e.type==='up'));
+ assert.deepEqual(earlier.events.map(e=>e.t),[-100,10]);
+ assert.equal(initial.seed.length,0);
+ assert.equal(j.capture(1000250,10,300).seed.length,0);
+});

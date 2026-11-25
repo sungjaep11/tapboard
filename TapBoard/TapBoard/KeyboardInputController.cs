@@ -26,13 +26,17 @@ namespace TapBoard
         private bool inputLocked;
         private readonly Func<double> clock;
         private readonly int sameKeyMinIntervalMs;
+        private readonly bool conventional;
         private PendingTap lastTap;
 
-        internal KeyboardInputController() : this(KeyboardSettings.Current.SameKeyMinIntervalMs,
-            () => System.Diagnostics.Stopwatch.GetTimestamp() * 1000.0 / System.Diagnostics.Stopwatch.Frequency) { }
+        internal KeyboardInputController() : this(false) { }
+        internal KeyboardInputController(bool conventional) : this(KeyboardSettings.Current.SameKeyMinIntervalMs,
+            () => System.Diagnostics.Stopwatch.GetTimestamp() * 1000.0 / System.Diagnostics.Stopwatch.Frequency, conventional) { }
         // Inject a monotonic clock for deterministic boundary and bounce tests.
-        internal KeyboardInputController(int minimumIntervalMs, Func<double> clock)
+        internal KeyboardInputController(int minimumIntervalMs, Func<double> clock) : this(minimumIntervalMs, clock, false) { }
+        internal KeyboardInputController(int minimumIntervalMs, Func<double> clock, bool conventional)
         {
+            this.conventional = conventional;
             sameKeyMinIntervalMs = minimumIntervalMs;
             this.clock = clock;
         }
@@ -111,7 +115,7 @@ namespace TapBoard
                 else keyContacts.Add(id, key);
                 break;
             }
-            if (inputLocked || new HashSet<Key>(keyContacts.Values).Count <= KeyboardSettings.Current.MaxActiveKeys) return;
+            if (conventional || inputLocked || new HashSet<Key>(keyContacts.Values).Count <= KeyboardSettings.Current.MaxActiveKeys) return;
             // Cancel before processing releases in the native packet. Once
             // locked, every tracked contact (including modifiers) must lift.
             inputLocked = true;
@@ -183,6 +187,8 @@ namespace TapBoard
             bool windowsWasActive = windowsKey != null && windowsKey.IsActive();
             bool shiftWasActive = IsShiftKeyOn(), controlWasActive = IsControlKeyOn();
             bool altWasActive = alt != null && alt.IsActive();
+            bool newConventionalPress = conventional && e == KeyAreaEvent.TOUCH &&
+                key != null && key.Definition.type == Key.TYPE.TAPPER && key.State.GetTappingContact(pointID) == null;
             bool accepted = key != null && key.OnKeyAreaEvent(e, pointID, x, y);
             bool shiftIsActive = IsShiftKeyOn(), controlIsActive = IsControlKeyOn();
             bool altIsActive = alt != null && alt.IsActive();
@@ -191,7 +197,14 @@ namespace TapBoard
             if (shiftWasActive != shiftIsActive || controlWasActive != controlIsActive || altWasActive != altIsActive)
                 ModifiersChanged?.Invoke(shiftIsActive, controlIsActive, altIsActive);
             if (key != null && key.Definition.type == Key.TYPE.TAPPER)
-                UpdateTap(key, e, pointID, accepted, shiftIsActive);
+            {
+                if (newConventionalPress)
+                {
+                    TraceTouch("ACCEPT", pointID, x, y, key.GetName());
+                    CreateKeyInputEvent(key.GetName(), shiftIsActive, controlIsActive);
+                }
+                else if (!conventional) UpdateTap(key, e, pointID, accepted, shiftIsActive);
+            }
             else if (accepted)
             {
                 if (key.Definition.type == Key.TYPE.NORMAL) lastTap = null;

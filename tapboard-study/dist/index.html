@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Tapboard+ 타이핑 실험 및 이벤트 기록 도구"><title>Tapboard+ · Typing lab</title>
-<link rel="stylesheet" href="styles.css"><script src="metrics.js" defer></script><script src="touch.js" defer></script><script src="phrases.js" defer></script><script src="app.js" defer></script>
+<link rel="stylesheet" href="styles.css"><script src="metrics.js" defer></script><script src="touch.js" defer></script><script src="phrases.js" defer></script><script src="paragraph.js" defer></script><script src="convboard.js" defer></script><script src="maps.js" defer></script><script src="protocol.js" defer></script><script src="app.js" defer></script>
 </head>
 <body>
 <header class="topbar"><a class="brand" href="./"><span class="brand-icon">t<span>+</span></span>tapboard<span class="brand-plus">+</span><span class="lab-label">TYPING LAB</span></a><div class="local-tag"><i></i> 이 브라우저에 저장</div></header>
@@ -11,20 +11,30 @@
 <div class="heading"><div><div class="eyebrow">EXPERIMENT WORKSPACE / 01</div><h1>타이핑을 관찰하는 공간.</h1><p>손을 쉬고, 문장을 입력하고, 각 순간을 기록하세요.</p></div><button id="exportAll" class="button secondary">↓ 전체 데이터 <span>JSON</span></button></div>
 <div id="notice" class="notice" role="status" hidden></div>
 <section class="panel touch-panel" aria-label="Tapboard 터치 로그 연결">
-<div class="touch-header"><div><div class="eyebrow">PHYSICAL TOUCH / AUTO LOGGING</div><h2>실제 접촉에서 레스팅을 측정합니다.</h2></div><div class="export-buttons"><a class="button secondary" href="downloads/Tapboard-touch-experiment-v1.1.zip" download>↓ Windows 앱</a><button id="connectTouch" class="button secondary">↔ 터치 로그 연결</button></div></div>
-<div class="touch-options"><label class="check-label"><input id="touchEnabled" type="checkbox"> 터치 기반 자동 측정 사용</label><label for="touchThreshold">레스팅 기준 (ms) <input id="touchThreshold" required type="number" min="50" max="10000" step="10" value="300"></label><span id="touchStatus" role="status">연결 안 됨</span><strong id="physicalRest">— s</strong></div>
-<p class="muted-text">같은 PC의 Chrome / Edge에서 <b>문서 → TapBoard-Experiments → 최신 touch-*.jsonl</b>을 선택하세요. 기준 시간을 넘긴 접촉의 초과 구간을 자동 합산합니다. 여러 손가락의 겹친 시간은 한 번만 세며, Shift 등 보조 키와 반복 키의 홀드는 제외합니다.</p>
+<div class="touch-header"><div><div class="eyebrow">PHYSICAL TOUCH / AUTO LOGGING</div><h2>실제 접촉에서 레스팅을 측정합니다.</h2></div><div class="export-buttons"><a class="button secondary" href="downloads/Tapboard-touch-experiment-v1.1.zip" download>↓ TapBoard+ Windows 앱</a><a class="button secondary" href="downloads/ConvBoard-Windows.zip" download>↓ ConvBoard Windows 앱</a><button id="connectTouch" class="button secondary">↔ 터치 로그 연결</button></div></div>
+<div class="touch-options"><label id="touchSwitch" class="check-label"><input id="touchEnabled" type="checkbox"> 터치 기반 자동 측정 사용</label><label id="thresholdSetup" for="touchThreshold">레스팅 기준 (ms) <input id="touchThreshold" required type="number" min="50" max="10000" step="10" value="300"></label><span id="touchStatus" role="status">연결 안 됨</span><strong id="physicalRest">— s</strong></div>
+<p id="touchInfo" class="muted-text">같은 PC의 Chrome / Edge에서 <b>문서 → TapBoard-Experiments → 최신 touch-*.jsonl</b>을 선택하세요. 기준 시간을 넘긴 접촉의 초과 구간을 자동 합산합니다. 여러 손가락의 겹친 시간은 한 번만 세며, Shift 등 보조 키와 반복 키의 홀드는 제외합니다.</p>
 </section>
 <div class="workspace">
 <aside class="panel setup">
 <div class="section-title"><span class="step">01</span><h2>실험 설정</h2><span class="small-label">SETUP</span></div>
 <fieldset id="settings"><legend class="sr-only">실험 설정</legend>
 <label for="participant">참가자 ID</label><input id="participant" value="P01" maxlength="80" autocomplete="off">
-<label for="condition">키보드 조건</label><select id="condition"><option>Tapboard+</option>Tapboard+ · Overlay</option><option>일반 터치 키보드</option><option>물리 키보드</option><option>기타</option></select>
+<label for="protocol">과제</label><select id="protocol"><option value="paragraph">문단 입력 · 홈키 및 탐색 지도</option><option value="single">단일 문장 로깅</option></select>
+<div id="paragraphSettings">
+<label for="studyCondition">실험 조건</label><select id="studyCondition"><option value="A">A · ConvBoard · 맨유리</option><option value="B">B · ConvBoard · 필름</option><option value="C" selected>C · TapBoard+ · 맨유리</option><option value="D">D · TapBoard+ · 필름</option></select>
+<label for="paragraphText">영어 문단 · 한 줄에 한 문장</label><textarea id="paragraphText" rows="3">the water is warm
+we walk along the river
+the wind is still</textarea>
+<div class="field-row"><div><label for="widthMm">아래 화면 가로 (mm)</label><input id="widthMm" type="number" step="any" min="1" placeholder="실측값"></div><div><label for="pitchMm">키 간격 (mm)</label><input id="pitchMm" type="number" step="any" min="1" value="19.5"></div></div>
+<div id="nativeCalibration"><label for="nativeWidth">아래 화면 가로 해상도 (px) · ConvBoard 앱 자동</label><input id="nativeWidth" type="number" min="1" step="1" placeholder="Windows 디스플레이 해상도"><p class="muted-text">두 앱의 DisplayWidthMm과 KeyPitchMm을 위 값에 맞추세요. Windows ConvBoard의 해상도와 키 배치는 연결한 로그에서 읽습니다.</p></div>
+<div id="convSetup" hidden><label for="convSource">ConvBoard 실행 방식</label><select id="convSource"><option value="native">Windows 앱 · ConvBoard.exe</option><option value="browser">브라우저 키보드 창</option></select><p class="muted-text">Windows 앱은 아래 화면에 열고, 위쪽에서 convboard-touch-*.jsonl을 연결하세요.</p><div id="convBrowserSetup" hidden><button type="button" id="openConv" class="button secondary">아래 화면 ConvBoard 열기</button><p class="muted-text">아래 화면에서 전체 화면 버튼을 누르세요. 이 조건에서는 Windows 키보드 앱을 닫습니다.</p></div></div>
+</div>
+<div id="legacyCondition" hidden><label for="condition">키보드 조건</label><select id="condition"><option>Tapboard+</option><option>Tapboard+ · Overlay</option><option>일반 터치 키보드</option><option>물리 키보드</option><option>기타</option></select></div>
 <div class="field-row"><div><label for="block">블록</label><input id="block" type="number" min="1" max="999" value="1"></div><div><label for="trialKind">측정 구분</label><select id="trialKind"><option value="measured">본 실험</option><option value="practice">연습</option></select></div></div>
-<label for="language">프롬프트 세트</label><select id="language"><option value="en">English · MacKenzie 500문장</option><option value="ko">한국어 · 짧은 문장</option><option value="custom">직접 입력</option></select>
+<div id="legacyPrompt" hidden><label for="language">프롬프트 세트</label><select id="language"><option value="en">English · MacKenzie 500문장</option><option value="ko">한국어 · 짧은 문장</option><option value="custom">직접 입력</option></select>
 <div id="customWrap" hidden><label for="customPrompt">사용자 문장 (최대 500자)</label><textarea id="customPrompt" maxlength="500" rows="3">The quick brown fox jumps over the lazy dog.</textarea></div>
-<div class="field-row"><div><label for="restSeconds">시작 전 레스팅 <span>초</span></label><input id="restSeconds" type="number" min="0" max="120" step="1" value="3"></div><div><label for="idleSeconds">무입력 기준 <span>초</span></label><input id="idleSeconds" type="number" min="0.2" max="60" step="0.1" value="2"></div></div>
+</div><div class="field-row"><div id="baselineSetup" hidden><label for="restSeconds">시작 전 레스팅 <span>초</span></label><input id="restSeconds" type="number" min="0" max="120" step="1" value="3"></div><div><label for="idleSeconds">무입력 기준 <span>초</span></label><input id="idleSeconds" type="number" min="0.2" max="60" step="0.1" value="2"></div></div>
 <label for="notes">조건 메모</label><textarea id="notes" rows="2" maxlength="2000" placeholder="오버레이, 피드백, 기기 설정 등"></textarea>
 </fieldset>
 <div class="setup-foot"><span class="tiny-dot"></span><p>설정은 회차 시작 시 고정됩니다.<br>로깅한 연습 회차는 ‘연습’으로 표시합니다.</p></div>
@@ -54,6 +64,11 @@
 <div class="table-scroll"><table><thead><tr><th>회차 / 참가자</th><th>조건</th><th>상태</th><th>WPM</th><th>정확도</th><th>첫 키</th><th>지시 레스팅</th><th>실측 레스팅</th><th>상세</th></tr></thead><tbody id="records"></tbody></table></div>
 <div id="empty" class="empty"><span>⌨</span><strong>첫 번째 기록을 기다리고 있어요.</strong><p>설정을 확인한 뒤 로깅을 시작하세요. 완료한 회차가 여기에 쌓입니다.</p></div>
 </section>
+<section class="panel results" id="mapPanel"><div class="results-head"><h2>홈키와 탐색 지도</h2><div class="export-buttons"><select id="mapKind" aria-label="지도 측정 구분"><option value="measured">본 실험</option><option value="practice">연습</option></select><select id="mapCondition" aria-label="지도 조건"><option>A</option><option>B</option><option selected>C</option><option>D</option></select></div>
+</div><div class="export-buttons"><label class="button small secondary">전체 JSON에서 지도 열기 <input type="file" accept=".json,application/json" id="mapFile"></label><button class="button small secondary" id="localMaps" hidden>현재 기록 보기</button><span class="muted-text" id="mapSource"></span></div><p id="mapStatus" class="muted-text"></p><div id="maps" hidden>
+<h3>F·J 최초 접촉점</h3><canvas id="homeMap" width="1050" height="385" aria-label="두 검지 최초 접촉 분포"></canvas>
+<h3>문장 입력 중 탐색 경로</h3><canvas id="strokeMap" width="1050" height="385" aria-label="문장 입력 중 탐색 경로"></canvas>
+<button id="saveHome" class="button secondary">홈키 지도 PNG</button> <button id="saveStrokes" class="button secondary">탐색 지도 PNG</button></div></section>
 <details class="guide"><summary>측정 기준과 데이터 안내 <span>+</span></summary><div class="guide-grid"><div><h3>레스팅과 무입력은 다릅니다.</h3><p>레스팅은 타이머 또는 레스팅 버튼으로 지정한 구간입니다. 지시된 레스팅은 실제 접촉을 뜻하지 않습니다. 터치 로그 연결 시 실측 레스팅을 별도로 기록합니다. 실측은 키·빈 영역의 장시간 접촉 기준이며 손가락/손바닥이나 휴식 의도는 구분하지 않습니다. 무입력은 설정 기준 이상의 키 이벤트 간격 전체 길이를 합산하며, 지시된 레스팅을 제외합니다.</p></div><div><h3>WPM과 한글 입력</h3><p>WPM = (최종 문자 수 − 1) ÷ 5 ÷ 첫 문자부터 마지막 편집까지의 분. 공백을 포함하고 NFC 정규화한 유니코드 문자로 셉니다. 한국어는 음절 기준이며 CPM도 함께 저장합니다. 첫 키 반응과 조합 완료 후 첫 문자 지연을 따로 기록합니다.</p></div><div><h3>정확도와 수정 행동</h3><p>정확도 = 100 × (1 − 전체 프롬프트와 입력의 편집 거리 ÷ 두 문자열 중 긴 길이). 아직 입력하지 않은 부분도 오류에 포함됩니다. 삭제 문자 수는 수정 행동이며, 실제로 고친 오타 수와 같지 않습니다. KSPC는 브라우저가 받은 입력 키 이벤트 기준입니다.</p></div><div><h3>원시 데이터와 저장</h3><p>키 누름·해제, 입력 전후, 한글 조합, 레스팅, 포커스·탭 이탈을 상대 시간과 UTC 시각으로 저장합니다. 데이터는 이 브라우저에만 보관합니다. 실행 중 약 1초마다 복구용으로 저장하며, 종료 후 파일로 내보내세요. 다른 기기·주소와 자동 동기화되지 않습니다. 터치 파일은 같은 PC에서 읽으며, 기록이 끊긴 구간은 실측에서 제외합니다. 앱을 다시 시작하면 새 로그를 연결하세요.</p></div></div></details>
 <footer><span>tapboard+ <b>RESEARCH TOOLS</b></span><span>Observe the interaction. Keep the evidence.</span></footer>
 </main>

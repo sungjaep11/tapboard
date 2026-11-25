@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
+
 
 namespace TapBoard
 {
@@ -35,14 +35,15 @@ namespace TapBoard
                 Debug.WriteLine("SetGestureConfig failed: " + Marshal.GetLastWin32Error());
         }
 
-        internal static bool HandleMessage(ref Message message)
+        internal static bool HandleMessage(IntPtr window, int message, out IntPtr result)
         {
-            if (message.Msg == QuerySystemGestureStatus) // WM_TABLET_QUERYSYSTEMGESTURESTATUS
+            result = IntPtr.Zero;
+            if (message == QuerySystemGestureStatus) // WM_TABLET_QUERYSYSTEMGESTURESTATUS
             {
-                message.Result = new IntPtr(TabletFlags);
+                result = new IntPtr(TabletFlags);
                 return true;
             }
-            if (message.Msg == GestureNotify) BlockGestures(message.HWnd); // WM_GESTURENOTIFY
+            if (message == GestureNotify) BlockGestures(window); // WM_GESTURENOTIFY
             return false;
         }
 

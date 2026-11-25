@@ -34,23 +34,44 @@
     get ended(){return this.rows.at(-1)?.type==='end';}
     capture(startUnixMs,endMs,thresholdMs){
       if(!this.meta)return null;
-      const offset=this.meta.startedUnixMs-startUnixMs, held=new Map(), events=[];
-      let previousHeartbeat=null;
-      for(const row of this.rows){
-        const e={...row,native_t:row.t,t:row.t+offset,utc:new Date(this.meta.startedUnixMs+row.t).toISOString()};
-        if(row.type==='heartbeat')e.clockDrift=Math.abs(row.wallUnixMs-(this.meta.startedUnixMs+row.t))>50;
-        if(e.t<0){
-          if(e.type==='down')held.set(e.id,e);
-          if(e.type==='up')held.delete(e.id);
-          if(['reset','end','gap','NATIVE_ERROR'].includes(e.type))held.clear();
-          if(e.type==='heartbeat')previousHeartbeat=e;
-        }else if(e.t<=endMs)events.push(e);
-        else if(e.type==='heartbeat'){events.push(e);break;}
+      const offset=this.meta.startedUnixMs-startUnixMs;
+      // Polling a long recording should convert each sample only once per trial.
+      if(this.captureCache?.start!==startUnixMs)
+        this.captureCache={start:startUnixMs,index:0,held:new Map(),previousHeartbeat:null,events:[],beats:[]};
+      const c=this.captureCache;
+      const map=row=>{
+        const t=row.t+offset;
+        const e={...row,native_t:row.t,t,utc:new Date(this.meta.startedUnixMs+row.t).toISOString()};
+        if(row.type==='heartbeat') e.clockDrift=Math.abs(row.wallUnixMs-(this.meta.startedUnixMs+row.t))>50;
+        return e;
+      };
+      while(c.index<this.rows.length) {
+        const row=this.rows[c.index++];
+        if(row.t+offset<0) {
+          if(row.type==='down') c.held.set(row.id,row);
+          if(row.type==='up') c.held.delete(row.id);
+          if(['reset','end','gap','NATIVE_ERROR'].includes(row.type)) c.held.clear();
+          if(row.type==='heartbeat') c.previousHeartbeat=row;
+        } else {
+          const e=map(row);
+          c.events.push(e);
+          if(e.type==='heartbeat') c.beats.push(e);
+        }
       }
-      if(previousHeartbeat)events.unshift(previousHeartbeat);
+      function through(rows) {
+        let lo=0,hi=rows.length;
+        while(lo<hi){const mid=Math.floor((lo+hi)/2);if(rows[mid].t<=endMs)lo=mid+1;else hi=mid;}
+        return lo;
+      }
+      const events=c.events.slice(0,through(c.events));
+      if(c.previousHeartbeat) events.unshift(map(c.previousHeartbeat));
+      const next=c.beats[through(c.beats)];
+      if(next) events.push(next);
       return {schema:SCHEMA,sessionId:this.meta.sessionId,startedUnixMs:this.meta.startedUnixMs,
+        ...(this.meta.keyboard?{keyboard:this.meta.keyboard,activation:this.meta.activation,
+          nativeWidthPx:this.meta.widthPx,nativePitchPx:this.meta.pitchPx}:{}),
         timeMapping:'native UTC anchor to browser UTC anchor on the same PC',thresholdMs,
-        seed:Array.from(held.values()),events,error:this.error};
+        seed:Array.from(c.held.values(),map),events,error:this.error};
     }
   }
   const intersect=(xs,ys)=>M.union(xs.flatMap(([a,b])=>ys.map(([s,e])=>[Math.max(a,s),Math.min(b,e)]).filter(([s,e])=>e>s)));

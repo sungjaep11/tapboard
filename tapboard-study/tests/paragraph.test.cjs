@@ -1,0 +1,158 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const P=require('../dist/paragraph.js'), M=require('../dist/metrics.js');
+
+test('physical layout, swapped landing order and a miss retain calibrated target distances',()=>{
+  const g=P.geometry(1536,307.2,19.5,true);
+  assert.equal(g.pitchPx,98);assert.ok(Math.abs(g.mmPerPx-.2)<1e-10);
+  const at=label=>{const k=g.keys.find(k=>k.label===label);return {x:k.x+k.w/2,y:k.y+k.h/2};};
+  const [left,right]=P.homePoints([{...at('j'),id:3,t:1},{...at('d'),id:4,t:2}],g);
+  assert.equal(left.target,'f');assert.equal(left.actual,'d');assert.ok(Math.abs(left.deviationMm-19.6)<1e-9);
+  assert.equal(right.actual,'j');assert.equal(right.correct,true);
+  assert.throws(()=>P.geometry(0,300,19.5,true));
+});
+test('paths use cumulative distance and strict limits and never bridge rests, missing coverage or reused IDs',()=>{
+  const phases=[{name:'typing',t:0,sentence:0},{name:'inter_rest',t:2000,sentence:1},{name:'typing',t:5000,sentence:1}];
+  const events=[];
+  const add=(type,t,x,id=1)=>events.push({type,t,x,y:5,id});
+  add('down',0,0);add('move',250,1.1);add('up',500,0); // 2.2 mm, zero displacement
+  add('down',520,0);add('up',920,9); // exactly 400ms
+  add('down',1000,0);add('up',1500,1.9);
+  add('down',1600,0);add('up',2100,10);
+  add('down',2200,0);add('up',5100,10);
+  add('down',5200,0);add('up',5900,10);
+  add('down',6100,0);add('reset',6300,0);add('up',6800,10);
+  const trial={paragraph:{geometry:{mmPerPx:1},phases},touch:{events},metrics:{touch_coverage_intervals:[[0,5400],[5800,7000]]}};
+  const s=P.strokes(trial);assert.equal(s.length,1);assert.equal(s[0].mm,2.2);
+  assert.equal(s[0].durationMs,500);assert.equal(s[0].sentence,0);
+});
+test('sentence timings exclude the rest and first character includes corrected mistakes',()=>{
+  const sentences=[{index:0,prompt:'ab',text:'ab',cueMs:100,submittedMs:600},{index:1,prompt:'cd',text:'cd',cueMs:4100,submittedMs:4800}];
+  const trial={paragraph:{sentences},config:{idleMs:2000},events:[]};
+  for(const [sentence,t,after,added] of [[0,200,'x',1],[0,230,'',0],[0,300,'a',1],[0,500,'ab',1],[1,4400,'c',1],[1,4700,'cd',1]])
+    trial.events.push({type:'text_commit',sentence,phase:'typing',t,after,added,removed:added?0:1});
+  const [a,b]=P.sentenceMetrics(trial,M);
+  assert.equal(a.firstCharacter,'x');assert.equal(a.transcription_ms,300);assert.equal(b.transcription_ms,300);
+  assert.equal(b.first_text_after_cue_ms,300);
+});
+
+// Run the public standalone scripts with deterministic DOM, sensor and time inputs.
+// This exercises the same buttons, start/submit functions, exports and map drawing as the offline file.
+function lab(code,source='browser',journalKeyboard=null) {
+  const html=fs.readFileSync(path.join(__dirname,'../../tapboard-test.html'),'utf8');
+  const elements=new Map(), timers=[];
+  class Element {
+    constructor(){this.value='';this.classList={toggle(){}};this.events={};this.style={};this.width=1050;this.height=385;this.selectionStart=0;this.selectionEnd=0;this.hidden=false;}
+    get valueAsNumber(){return this.value===''?NaN:Number(this.value);}
+    focus(){} append(){} replaceChildren(){} remove(){} reportValidity(){return true;}
+    addEventListener(name,fn){(this.events[name]??=[]).push(fn);}
+    getContext(){return {fillRect(){},strokeRect(){},beginPath(){},arc(){},fill(){},stroke(){},moveTo(){},lineTo(){},fillText(){}};}
+    setRangeText(str,start,end){this.value=this.value.slice(0,start)+str+this.value.slice(end);this.selectionStart=this.selectionEnd=start+str.length;}
+  }
+  const document=new Element();
+  document.body=new Element();document.createElement=()=>new Element();document.createDocumentFragment=document.createElement;
+  for(const match of html.matchAll(/\bid="([^"]+)"/g)) elements.set(match[1],new Element());
+  document.getElementById=id=>elements.get(id);
+  for(const [id,value] of Object.entries({protocol:'paragraph',convSource:source,studyCondition:code,mapCondition:code,mapKind:'measured',widthMm:'310',nativeWidth:'1550',pitchMm:'19.5',paragraphText:'ab\ncd',participant:'P1',block:'1',trialKind:'measured',language:'en',restSeconds:'3',idleSeconds:'2',touchThreshold:'300'})) elements.get(id).value=value;
+  const ctx=vm.createContext({document,console,Intl,window:null,Element,performance:{now:()=>ctx.clock,timeOrigin:100000},
+    sensorKeyboard:journalKeyboard ?? (source==='native' && ['A','B'].includes(code)?'ConvBoard':'TapBoard+'),clock:0,Date:class extends Date {static now(){return 100000+ctx.clock;}},
+    setInterval:fn=>{timers.push(fn);},setTimeout:fn=>{fn();},clearInterval(){},crypto:require('node:crypto').webcrypto,
+    Blob,URL,TextDecoder,navigator:{userAgent:'test'},screen:{width:1550,height:900},innerWidth:1550,innerHeight:900,devicePixelRatio:1,
+    indexedDB:{open(){return {}; }},addEventListener(){}});
+  ctx.window=ctx;
+  const run=code=>vm.runInContext(code,ctx);
+  for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) run(match[1]);
+  run(`db={transaction(){const tx={objectStore(){return {put(){queue(tx)}}}};return tx}};
+       const queue=tx=>Promise.resolve().then(()=>tx.oncomplete());
+       const j=new TapTouch.Journal();
+       j.feed(JSON.stringify({schema:'tapboard-touch/v1',type:'session',seq:0,t:0,sessionId:'s',keyboard:sensorKeyboard,widthPx:1550,pitchPx:98,startedUnixMs:100000})+'\\n');
+       function feed(type,t,id=0,x=0,y=0){clock=t;const e={seq:j.lastSeq+1,type,t,id,x,y,keyType:'TAPPER'};
+         if(type==='heartbeat')e.wallUnixMs=Date.now();j.feed(JSON.stringify(e)+'\\n');}
+       feed('heartbeat',0);
+       touchLink.journal=j;touchLink.handle={};touchLink.poll=async()=>{};
+       conv.win={closed:false,document:{fullscreenElement:{}},innerHeight:900};
+       conv.settings=calibration();conv.geometry=P.geometry(1550,310,19.5,false);conv.journal=j;
+       function tick(type,t,id=0,x=0,y=0){feed(type,t,id,x,y);if(active){captureTouch(active,time());processStudyTouch();}}
+       function typeChar(c){if(browserTrial(active))convKey(c,false,false,'keydown',4);
+         else {$('typing').value+=c;commitText('insertText');}}
+       $('start').onclick();`);
+  return {run,elements};
+}
+for(const code of ['A','B','C','D'])test(code+' standalone paragraph from hands-off to maps and export',async()=>{
+  const {run,elements}=lab(code);
+  assert.equal(run('phase'),'hands_off');
+  run("tick('heartbeat',100); tick('down',160,1,540,310);tick('down',190,2,860,310)");
+  assert.equal(run('phase'),'release');assert.equal(run('active.paragraph.home.length'),2);
+  run("tick('up',210,1);tick('up',220,2);tick('heartbeat',300);clock=330;typeChar('a');clock=370;typeChar('b')");
+  assert.equal(run('phase'),'typing');assert.equal(run('active.text'),'ab');
+  run("tick('down',400,3,550,310);tick('move',600,3,565,310);tick('up',900,3,550,310);tick('heartbeat',950);clock=1000;submitSentence()");
+  assert.equal(run('phase'),'inter_rest');assert.equal(elements.get('prompt').textContent||'','');
+  run("tick('down',1100,1);tick('down',1120,2);tick('heartbeat',2000);tick('heartbeat',3000);tick('up',3990,2);tick('down',4010,2);tick('heartbeat',4100);tick('heartbeat',5000);tick('heartbeat',6000);tick('heartbeat',7000)");
+  assert.equal(run('phase'),'inter_rest');
+  run("tick('heartbeat',7020);tick('up',7030,1);tick('up',7040,2);clock=7100;typeChar('c');clock=7200;typeChar('d');tick('heartbeat',7300);submitSentence()");
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('records[0].status'),'completed');assert.equal(run('records[0].text'),'ab cd');
+  assert.equal(run('records[0].metrics.touch_quality'),'complete');assert.equal(run('P.strokes(records[0]).length'),1);
+  assert.equal(run('records[0].metrics.transcription_ms'),140);
+  assert.equal(elements.get('maps').hidden,false);
+  run("let exported;download=(name,content)=>exported=content;exportData('json')");
+  const trial=JSON.parse(run('exported')).trials[0];
+  assert.equal(trial.sentenceMetrics.length,2);assert.equal(trial.sentenceMetrics[1].first_text_after_cue_ms,80);
+  assert.equal(trial.paragraph.geometry.keys.length,79);assert.equal(trial.paragraph.condition,code);
+  assert.equal(trial.explorationStrokes.length,1);
+  assert.equal(trial.explorationStrokes[0].durationMs,500);
+  await run("const json=exported;const input={files:[{name:'export.json',text:async()=>json}]};$('mapFile').onchange({target:input})");
+  assert.equal(elements.get('mapSource').textContent,'export.json');
+  assert.equal(elements.get('maps').hidden,false);
+  run("$('localMaps').onclick()");
+  run("exportData('events')");assert.match(run('exported'),/keyboard_geometry/);assert.match(run('exported'),/inter_rest/);
+});
+test('a lost stream faults the study and a legacy record never appears on a calibrated map',()=>{
+  const {run,elements}=lab('C');
+  run("tick('heartbeat',100);tick('reset',200)");
+  assert.equal(run('phase'),'fault');assert.ok(run('active.paragraph.failure'));
+  run("active=null;records=[{condition:'C',status:'completed',kind:'measured',metrics:{touch_quality:'complete'}}];renderMaps()");
+  assert.equal(elements.get('maps').hidden,true);
+});
+test('ConvBoard pointer callbacks capture untyped movement, reuse contact IDs and enter text only in the typing phase',()=>{
+  const {run}=lab('A');
+  // Reopen a real ConvBoardWindow controller against a small popup DOM.
+  run(`const pad=new ConvBoardWindow(), nodes=[], keys=[], faults=[];
+    const doc=new Element();doc.body=new Element();doc.documentElement=new Element();
+    doc.createElement=()=>{const el=new Element();nodes.push(el);return el};
+    const popup={document:doc,innerWidth:1550,innerHeight:900,screen:{width:1550,height:900},
+      performance:{timeOrigin:100000},setInterval:()=>1,clearInterval(){},addEventListener(){},closed:false};
+    window.open=()=>popup;pad.open({widthMm:310,pitchMm:19.5},(...args)=>keys.push(args),s=>faults.push(s));
+    const surface=nodes[0];surface.setPointerCapture=()=>{};
+    const keyF=pad.geometry.keys.find(k=>k.label==='f');
+    function point(type,t,dx=0){clock=t;surface.events[type][0]({preventDefault(){},pointerType:'touch',
+      pointerId:2,timeStamp:t,clientX:keyF.x+keyF.w/2+dx,clientY:keyF.y+keyF.h/2})}
+    point('pointerdown',100);point('pointermove',400,12);point('pointerup',600);
+    pad.typing=true;point('pointerdown',700);point('pointerup',740);`);
+  assert.equal(run("pad.journal.rows.filter(e=>['down','move','up'].includes(e.type)).length"),5);
+  assert.equal(run("keys.map(k=>k[0]+':'+k[3]).join(',')"),'f:keydown,f:keyup');
+  assert.equal(run('faults.length'),0);
+});
+
+for(const code of ['A','B']) test(code+' Windows ConvBoard uses native geometry, typing and touch stream',async()=>{
+  const {run,elements}=lab(code,'native');
+  assert.equal(run('phase'),'hands_off');
+  assert.equal(run('active.paragraph.touchSource'),'windows-touch');
+  assert.equal(run('active.paragraph.geometry.pitchPx'),98);
+  run("tick('heartbeat',100);tick('down',130,1,530,280);tick('down',150,2,810,280);tick('up',170,1);tick('up',190,2);tick('heartbeat',250)");
+  assert.equal(run('phase'),'typing');assert.equal(elements.get('typing').readOnly,false);
+  run("clock=300;typeChar('a');tick('heartbeat',350);const handleEnter=()=>document.events.keydown[0]({target:$('typing'),key:'Enter',preventDefault(){}});handleEnter()");
+  assert.equal(run('phase'),'inter_rest');
+  run("tick('down',400,1);tick('down',420,2);tick('heartbeat',1200);tick('heartbeat',2100);tick('heartbeat',3100);tick('heartbeat',3430);tick('up',3450,1);tick('up',3490,2);clock=3520;typeChar('c');tick('heartbeat',3600);handleEnter()");
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(run('records[0].touch.source'),'windows-touch');
+  assert.equal(run('records[0].status'),'completed');assert.equal(run('records[0].metrics.touch_quality'),'complete');
+});
+test('native A/B and C/D reject a journal from the other keyboard',()=>{
+  for(const [code,sensor] of [['A','TapBoard+'],['C','ConvBoard']]) {
+    const labState=lab(code,'native',sensor);
+    assert.equal(labState.run('active'),null);
+    assert.match(labState.elements.get('notice').textContent,/터치 로그/);
+  }
+});

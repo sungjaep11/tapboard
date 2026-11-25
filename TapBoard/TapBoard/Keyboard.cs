@@ -80,7 +80,9 @@ namespace TapBoard
 
         protected override void WndProc(ref Message message)
         {
-            if (!TouchGestureSettings.HandleMessage(ref message)) base.WndProc(ref message);
+            IntPtr result;
+            if (TouchGestureSettings.HandleMessage(message.HWnd, message.Msg, out result)) message.Result = result;
+            else base.WndProc(ref message);
         }
 
         protected override void OnShown(EventArgs e)

@@ -12,7 +12,7 @@ html = html.replace('class="brand" href="./"', 'class="brand" href="#"')
 html = html.replace('TYPING LAB</span>', 'TYPING LAB · LOCAL</span>')
 html = html.replace('<link rel="stylesheet" href="styles.css">', '<style>' + (source / 'styles.css').read_text(encoding='utf-8') + '</style>')
 scripts = []
-for name in ['metrics.js', 'touch.js', 'phrases.js', 'app.js']:
+for name in ['metrics.js', 'touch.js', 'phrases.js', 'paragraph.js', 'convboard.js', 'maps.js', 'protocol.js', 'app.js']:
     html = html.replace(f'<script src="{name}" defer></script>', '')
     scripts.append('<script>' + (source / name).read_text(encoding='utf-8') + '</script>')
 target.write_text(html.replace('</body>', ''.join(scripts) + '</body>'), encoding='utf-8')

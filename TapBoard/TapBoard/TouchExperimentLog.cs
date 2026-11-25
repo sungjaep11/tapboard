@@ -36,12 +36,14 @@ namespace TapBoard
             return text.Append('"').ToString();
         }
 
-        internal TouchExperimentLog(string directory, int tapDurationMs)
+        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0)
         {
             double startedUnixMs = UnixNow() - clock.Elapsed.TotalMilliseconds;
-            Path = System.IO.Path.Combine(directory, "touch-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + SessionId + ".jsonl");
+            Path = System.IO.Path.Combine(directory, (keyboard == "ConvBoard" ? "convboard-touch-" : "touch-") + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + SessionId + ".jsonl");
             pending.Enqueue("{\"schema\":\"tapboard-touch/v1\",\"type\":\"session\",\"seq\":0,\"t\":0,\"sessionId\":" +
-                Quote(SessionId) + ",\"startedUnixMs\":" + Number(startedUnixMs) + ",\"tapDurationMs\":" + tapDurationMs + "}");
+                Quote(SessionId) + ",\"keyboard\":" + Quote(keyboard) + ",\"widthPx\":" + widthPx +
+                ",\"pitchPx\":" + pitchPx + ",\"startedUnixMs\":" + Number(startedUnixMs) + ",\"activation\":" + Quote(keyboard == "ConvBoard" ? "touch-down" : "tap-release") +
+                ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + "}");
             worker = new Thread(WriteLoop) { IsBackground = true, Name = "TapBoard experiment log" };
             worker.Start();
         }

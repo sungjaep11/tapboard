@@ -21,9 +21,9 @@ internal static class Program
         internal readonly WindowsKeyboardOutput Output;
         internal Func<WindowsKeyboardOutput.Input[], uint> Delivery;
 
-        internal Rig(int minimumIntervalMs = 0)
+        internal Rig(int minimumIntervalMs = 0, bool conventional = false)
         {
-            Controller = new KeyboardInputController(minimumIntervalMs, () => Now);
+            Controller = new KeyboardInputController(minimumIntervalMs, () => Now, conventional);
             Output = new WindowsKeyboardOutput(k => Physical.Contains(k) || Injected.Contains(k), inputs =>
             {
                 uint sent = Delivery == null ? (uint)inputs.Length : Delivery(inputs);
@@ -152,6 +152,23 @@ internal static class Program
         ConfigurationManager.AppSettings.Set("TapMinDurationMs", "0");
         ConfigurationManager.AppSettings.Set("ExperimentLogging", "false");
         CheckTapOrder();
+        using (var r = new Rig(100, true))
+        {
+            r.Down("a",1);
+            r.Expect("41:0,41:2");
+            r.Down("s",2); r.Down("d",3);
+            Check(!r.Controller.IsLocked,"ConvBoard locked three ordinary contacts");
+            r.Expect("53:0,53:2,44:0,44:2");
+            r.Controller.DistributeEvent(KeyAreaEvent.MOVE,1,-10,-10);
+            r.Up("d",3); r.Up("s",2); r.Up("a",1);
+            r.Expect("");
+            r.Tap("a",1); r.Tap("a",1);
+            r.Expect("41:0,41:2,41:0,41:2");
+            r.Down("Shift",4); r.Down("a",5);
+            r.Expect("10:0,41:0,41:2");
+            r.Up("a",5); r.Up("Shift",4); r.Expect("10:2");
+        }
+        Console.WriteLine("PASS: ConvBoard contact-down output, overlap, rapid same key, held modifiers and silent releases.");
 
         using (var r = new Rig())
         {

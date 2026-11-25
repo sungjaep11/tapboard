@@ -44,7 +44,13 @@ namespace TapBoard
         internal readonly string KeyboardDisplay = Text("KeyboardDisplay");
         internal readonly double DisplayWidthMm = Number("DisplayWidthMm", 0, 0, 5000);
         private static string Text(string name)
-        { return System.Configuration.ConfigurationManager.AppSettings[name] ?? ""; }
+        {
+#if CONVBOARD
+            return ConvBoardConfiguration.Get(name);
+#else
+            return System.Configuration.ConfigurationManager.AppSettings[name] ?? "";
+#endif
+        }
         private static bool Boolean(string name, bool fallback)
         { bool value; return bool.TryParse(Text(name), out value) ? value : fallback; }
         private static int Integer(string name, int fallback, int minimum, int maximum)

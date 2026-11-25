@@ -3,19 +3,35 @@ const $ = id => document.getElementById(id), M = TapMetrics, T = TapTouch;
 const touchLink = new T.FileLink();
 let finalizing = false;
 function summary(trial, now = trial.endMs ?? trial.lastSavedMs ?? 0) {
-  return {...M.summarize(trial, now), ...T.summarize(trial.touch, now)};
+  const touch=T.summarize(trial.touch,now);
+  if(!trial.paragraph) return {...M.summarize(trial,now),...touch};
+  const sentences=P.sentenceMetrics(trial,M);
+  const prompt=sentences.map(s=>s.prompt).join(' '), text=sentences.map(s=>s.text).join(' ');
+  const metrics=M.summarize({...trial,prompt,text},now);
+  const timed=sentences.filter(s=>s.transcription_ms>0);
+  const ms=timed.reduce((total,s)=>total+s.transcription_ms,0);
+  const chars=timed.reduce((total,s)=>total+Math.max(0,s.characters-1),0);
+  const home=trial.paragraph.home;
+  return {...metrics,...touch,wpm:ms>0?chars*12000/ms:null,cpm:ms>0?chars*60000/ms:null,
+    transcription_ms:ms,home_both_correct:home.length===2?home.every(h=>h.correct):null,
+    home_latency_ms:home.length===2?Math.max(...home.map(h=>h.t))-trial.paragraph.homeCueMs:null};
 }
 function captureTouch(trial, now) {
   if (!trial.config.touchEnabled) return;
-  trial.touch = touchLink.journal.capture(trial.startedUnix, now, trial.config.touchThresholdMs);
+  trial.touch = studyLink(trial).journal.capture(trial.startedUnix, now, trial.config.touchThresholdMs);
+  if(trial.touch && trial.paragraph) {
+    trial.touch.source=trial.paragraph.touchSource;
+    if(trial.touch.source==='browser-pointer') trial.touch.timeMapping='lower-window pointer samples mapped to the upper browser monotonic clock; same-PC UTC anchor';
+  }
   if (trial.touch && trial.touchClockIssue != null) trial.touch.invalidFromMs = trial.touchClockIssue;
 }
 function renderTouchStatus() {
-  const state = touchLink.status();
+  const usingConv=integrated() && browserConv();
+  const state = usingConv?{ok:!!conv.win && !conv.win.closed,message:conv.win && !conv.win.closed?'ConvBoard 창 연결됨':'아래 화면에서 ConvBoard를 여세요'}:nativeStudyStatus();
   $('touchStatus').textContent = state.message;
   $('touchStatus').classList.toggle('connected', state.ok);
 }
-const VERSION = '1.1.0', SCHEMA = 'tapboard-study/v1';
+const VERSION = '1.3.0', SCHEMA = 'tapboard-study/v1';
 const phrases = {
   en: mackenziePhrases,
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']
@@ -30,7 +46,7 @@ const id = () => globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+'-
 function event(type, data={}) {
   if (!active) return;
   const t = time();
-  active.events.push({seq:active.events.length,t,utc:new Date(active.startedUnix+t).toISOString(),type,...data});
+  active.events.push({seq:active.events.length,t,utc:new Date(active.startedUnix+t).toISOString(),type,...(active.paragraph?{phase:active.paragraph.phases.at(-1)?.name,sentence:active.paragraph.index}:{}),...data});
   active.lastSavedMs=t;
 }
 function txPut(record) {
@@ -68,7 +84,9 @@ function loadDB() {
   });
 }
 function renderPrompt() {
-  const target = M.chars(active?.prompt ?? promptText()), typed = M.chars($('typing').value);
+  const paragraph=active?.paragraph;
+  const visiblePrompt=paragraph && phase!=='typing'?'':active?.prompt ?? promptText();
+  const target = M.chars(visiblePrompt), typed = M.chars($('typing').value);
   const fragment=document.createDocumentFragment();
   target.forEach((c,i)=>{
     const span=document.createElement('span'); span.textContent=c;
@@ -79,6 +97,7 @@ function renderPrompt() {
   const length=target.length;
   $('progressLabel').textContent=`${typed.length} / ${length}`;
   $('progressBar').style.width=`${Math.min(100,length?typed.length/length*100:0)}%`;
+  if(paragraph) { $('phraseLabel').textContent='문장 '+(paragraph.index+1)+' / '+paragraph.sentences.length;return; }
   $('phraseLabel').textContent=$('language').value==='custom'?'CUSTOM':`${$('language').value==='ko'?'한국어':'ENGLISH'} / ${String(phraseIndex+1).padStart(2,'0')}`;
 }
 function setCue(title,description,icon='↳',resting=false) {
@@ -114,23 +133,29 @@ function resetPracticeText() {
 }
 function start() {
   if (active || finalizing) return;
-  if ($('touchEnabled').checked && (!$('touchThreshold').reportValidity() || !touchLink.status().ok)) {notify('자동 측정을 사용하려면 같은 PC의 실행 중인 Tapboard 터치 로그를 먼저 연결하세요.');return;}
-  for (const name of ['participant','block','restSeconds','idleSeconds']) {
+  let paragraph=null;
+  if(integrated()) {
+    try {paragraph=prepareParagraph();} catch(error) {notify(error.message);return;}
+  }
+  if (!paragraph && $('touchEnabled').checked && (!$('touchThreshold').reportValidity() || !touchLink.status().ok)) {notify('자동 측정을 사용하려면 같은 PC의 실행 중인 Tapboard 터치 로그를 먼저 연결하세요.');return;}
+  const fields=paragraph?['participant','block','idleSeconds']:['participant','block','restSeconds','idleSeconds'];
+  for (const name of fields) {
     if (!$(name).reportValidity()) return;
   }
   if (!$('participant').value.trim()) {notify('참가자 ID를 입력하세요.');$('participant').focus();return;}
-  const prompt=promptText().normalize('NFC');
+  const prompt=paragraph?paragraph.sentences[0].prompt:promptText().normalize('NFC');
   if (!prompt.trim()) {notify('입력할 문장을 먼저 작성하세요.');return;}
   origin=performance.now();composing=false;$('typing').value='';$('countdown').textContent='';
   active={schema:SCHEMA,version:VERSION,id:id(),sessionId:sessionId,trial:records.length+1,
-    participant:$('participant').value.trim(),condition:$('condition').value,block:Number($('block').value),
-    kind:$('trialKind').value,language:$('language').value,promptIndex:phraseIndex,prompt,
-    notes:$('notes').value,config:{restMs:Number($('restSeconds').value)*1000,idleMs:Number($('idleSeconds').value)*1000,touchEnabled:$('touchEnabled').checked,touchThresholdMs:Number($('touchThreshold').value)},
+    participant:$('participant').value.trim(),condition:paragraph?.condition ?? $('condition').value,block:Number($('block').value),
+    kind:$('trialKind').value,language:paragraph?'en':$('language').value,...(paragraph?{paragraph}:{}),promptIndex:phraseIndex,prompt,
+    notes:$('notes').value,config:{restMs:paragraph?0:Number($('restSeconds').value)*1000,idleMs:Number($('idleSeconds').value)*1000,touchEnabled:!!paragraph || $('touchEnabled').checked,touchThresholdMs:Number($('touchThreshold').value)},
     startedUnix:Date.now()-time(),startedAt:new Date().toISOString(),timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
     environment:{userAgent:navigator.userAgent,viewport:{width:innerWidth,height:innerHeight},screen:{width:screen.width,height:screen.height},devicePixelRatio:devicePixelRatio},
     status:'running',text:'',events:[],rests:[],cueMs:null,lastSavedMs:0};
   event('trial_start');$('trialLabel').textContent=`TRIAL ${String(active.trial).padStart(2,'0')}`;
-  if (active.config.restMs>0) {
+  if(paragraph) startParagraph();
+  else if (active.config.restMs>0) {
     active.rests.push({start:0,end:null,kind:'instructed_baseline'});event('rest_start',{kind:'instructed_baseline'});
     setPhase('baseline');setCue('손을 편안하게 쉬어 주세요','카운트다운이 끝나면 문장을 입력하세요.','Ⅱ',true);
   } else beginTyping();
@@ -158,12 +183,21 @@ function commitText(inputType='') {
   if (next!==active.text) {
     const d=M.delta(active.text,next);
     event('text_commit',{inputType,before:active.text,after:next,...d});active.text=next;
+    if(active.paragraph) active.paragraph.sentences[active.paragraph.index].text=next;
   }
 }
 async function finish(status='completed') {
   if (!active) return;
   if (composing) {notify('한글 조합을 확정한 뒤 회차를 완료하세요.');$('typing').focus();return;}
-  commitText();event(status==='completed'?'trial_complete':'trial_abort');
+  commitText();
+  if(active.paragraph) {
+    const p=active.paragraph;
+    p.phases.push({name:'end',t:time(),sentence:p.index});
+    active.prompt=p.sentences.map(s=>s.prompt).join(' ');
+    active.text=p.sentences.map(s=>s.text).join(' ').trimEnd();
+    conv.locked=false;conv.typing=false;
+  }
+  event(status==='completed'?'trial_complete':'trial_abort');
   const now=time(), ended=active;
   for (const r of ended.rests) if (r.end===null) r.end=now;
   ended.endMs=now;ended.endedAt=new Date(ended.startedUnix+now).toISOString();ended.lastSavedMs=now;ended.status=status;ended.metrics=summary(ended);
@@ -177,20 +211,23 @@ async function finish(status='completed') {
     $('recordingStatus').textContent='마지막 터치 이벤트를 동기화하고 있습니다…';
     const deadline=performance.now()+1800;
     do {
-      await touchLink.poll();
-      const h=touchLink.journal.heartbeat;
-      if (h && touchLink.journal.meta.startedUnixMs+h.t>=ended.startedUnix+now) break;
-      if(touchLink.failure)break;
+      const link=studyLink(ended);
+      await link.poll?.();
+      const h=link.journal.heartbeat;
+      if (h && link.journal.meta.startedUnixMs+h.t>=ended.startedUnix+now) break;
+      if(link.failure || link.journal.ended)break;
       await new Promise(resolve=>setTimeout(resolve,100));
     } while(performance.now()<deadline);
     captureTouch(ended,now);
   }
   ended.metrics=summary(ended);await persist(ended);finalizing=false;setPhase('done');
   renderMetrics(ended,now);renderRecords();
+
   if(ended.config.touchEnabled&&ended.metrics.touch_quality!=='complete')notify('터치 로그가 일부 구간을 덮지 못했습니다. 실측 값은 확인된 구간만의 합계이며 회차 상세의 측정 범위를 확인하세요.');
   if (!active) {
     $('recordingStatus').textContent=storageBroken?'저장 실패 · 파일로 내보내세요':`${ended.events.length}개 이벤트 · 이 브라우저에 저장됨`;
     $('cueText').textContent=storageBroken?'저장에 실패했습니다. 전체 JSON으로 데이터를 내보내세요.':'요약 CSV 또는 전체 JSON으로 내보낼 수 있습니다. 다음 회차도 같은 문장으로 시작합니다.';
+    if(ended.paragraph) setupProtocol();
     if (document.activeElement===document.body) $('typing').focus({preventScroll:true});
   }
 }
@@ -203,6 +240,7 @@ function renderMetrics(trial,now) {
   $('elapsed').textContent=`${String(Math.floor(now/60000)).padStart(2,'0')}:${(now%60000/1000).toFixed(1).padStart(4,'0')}`;
 }
 function renderRecords() {
+  renderMaps();
   $('records').replaceChildren();$('recordCount').textContent=records.length;$('empty').hidden=!!records.length;
   for (const r of [...records].reverse()) {
     const m=r.metrics || summary(r), row=document.createElement('tr');
@@ -219,6 +257,15 @@ function showDetail(r) {
   const specs=[['실측 레스팅 (ms)',m.physical_rest_ms],['손가락별 레스팅 합계 (ms)',m.physical_rest_finger_ms],['실측 접촉 시간 (ms)',m.physical_contact_ms],['터치 측정 범위 (%)',m.touch_coverage_pct],['터치 기록 품질',m.touch_quality||'not_connected'],['접촉 수',m.touch_contact_count],['레스팅 기준 (ms)',m.touch_threshold_ms],['WPM',m.wpm],['CPM',m.cpm],['정확도 (%)',m.accuracy_pct],['편집 거리',m.edit_distance],['총 기록 시간 (ms)',m.duration_ms],['첫 문자 → 마지막 편집 (ms)',m.transcription_ms],['첫 키 / 입력 신호 (ms)',m.first_key_after_cue_ms],['첫 문자 / 입력 신호 (ms)',m.first_text_after_cue_ms],['첫 키 / 기록 시작 (ms)',m.first_key_from_start_ms],['지시된 레스팅 (ms)',m.instructed_rest_ms],['무입력 시간 (ms)',m.idle_ms],['무입력 구간 수',m.idle_count],['평균 키 간 간격 (ms)',m.mean_iki_ms],['평균 키 누름 시간 (ms)',m.mean_key_dwell_ms],['KSPC',m.kspc],['입력 키 이벤트 수',m.keydown_count],['Backspace / Delete',`${m.backspace_count} / ${m.delete_count}`],['삽입 / 삭제 문자',`${m.inserted_characters} / ${m.removed_characters}`],['포커스 이탈',m.focus_loss_count],['탭 숨김 (ms)',m.hidden_ms],['한글 조합 횟수',m.composition_count],['이벤트 수',r.events.length]];
   for(const [label,value] of specs){const line=document.createElement('div'),name=document.createElement('span'),val=document.createElement('b');name.textContent=label;val.textContent=typeof value==='string'?value:fmt(value);line.append(name,val);grid.append(line);}body.append(grid);
   for(const [name,text] of [['프롬프트',r.prompt],['입력 결과',r.text],['조건 메모',r.notes]]){const label=document.createElement('h3'),p=document.createElement('p');label.textContent=name;p.className='detail-text';p.textContent=text||'—';body.append(label,p);}
+  if(r.paragraph) {
+    const info=document.createElement('p');
+    info.textContent='홈키 접촉 '+r.paragraph.home.map(h=>h.target.toUpperCase()+' → '+(h.actual??'빈 영역')+' ('+fmt(h.deviationMm)+' mm)').join(', ');
+    body.append(info);
+    for(const s of P.sentenceMetrics(r,M)){
+      const line=document.createElement('p');
+      line.textContent=(s.index+1)+' · '+s.text+' · '+fmt(s.wpm)+' WPM · 첫 문자 '+fmt(s.first_text_after_cue_ms,0)+' ms';body.append(line);
+    }
+  }
   $('detail').showModal();
 }
 function snapshotRecords() {
@@ -227,17 +274,19 @@ function snapshotRecords() {
   if(active){const r=JSON.parse(JSON.stringify(active));r.lastSavedMs=time();r.metrics=summary(r,r.lastSavedMs);all.push(r);}return all;
 }
 function download(name,content,mime) {
-  const blob=new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  const blob=content instanceof Blob?content:new Blob([content],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
 function exportData(kind) {
   if(active) event('export',{kind});
   const all=snapshotRecords(),stamp=new Date().toISOString().replace(/[:.]/g,'-');
   if(!all.length){notify('내보낼 기록이 없습니다.');return;}
-  if(kind==='json')return download(`tapboard-${stamp}.json`,JSON.stringify({schema:SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),definitions:{physicalRest:'union of sustained TAPPER/BLANK contacts after threshold, clipped to trial and heartbeat-covered intervals; modifier/repeating keys excluded; incomplete coverage explicitly marked',touchClock:'same-PC UTC anchors, monotonic elapsed time; native and browser clock jumps over 50ms flagged; 250ms polling affects display only',rest:'instructed intervals; not physical contact detection',wpm:'max(0,NFC character count - 1) / 5 / minutes(first insertion to last committed edit); rests included',accuracy:'100 * (1 - Levenshtein(target, text) / max(length(target), length(text)))',idle:'full typing-key gaps >= threshold, excluding instructed rest intervals',timestamps:'monotonic milliseconds from trial start; UTC anchored to trial start',ime:'composition snapshots retained; text commits counted after composition',storage:'local browser; active checkpoints approximately every 1 second'},trials:all},null,2),'application/json');
+  if(kind==='json')return download(`tapboard-${stamp}.json`,JSON.stringify({schema:SCHEMA,version:VERSION,exportedAt:new Date().toISOString(),definitions:{paragraph:'keyboard geometry in source pixels; hand assignment by first landing x; rest requires two continuous contacts for 3000 ms; completed strokes entirely within a typing phase with duration >400 ms and cumulative length >1.9 mm; paragraph WPM pooled over individual sentence editing intervals',physicalRest:'union of sustained TAPPER/BLANK contacts after threshold, clipped to trial and heartbeat-covered intervals; modifier/repeating keys excluded; incomplete coverage explicitly marked',touchClock:'same-PC UTC anchors, monotonic elapsed time; native and browser clock jumps over 50ms flagged; 250ms polling affects display only',rest:'instructed intervals; not physical contact detection',wpm:'max(0,NFC character count - 1) / 5 / minutes(first insertion to last committed edit); rests included',accuracy:'100 * (1 - Levenshtein(target, text) / max(length(target), length(text)))',idle:'full typing-key gaps >= threshold, excluding instructed rest intervals',timestamps:'monotonic milliseconds from trial start; UTC anchored to trial start',ime:'composition snapshots retained; text commits counted after composition',storage:'local browser; active checkpoints approximately every 1 second'},trials:all.map(r=>r.paragraph?{...r,sentenceMetrics:P.sentenceMetrics(r,M),explorationStrokes:P.strokeSummary(r)}:r)},null,2),'application/json');
   const rows=kind==='summary'?all.map(r=>{
     const {idle_intervals,physical_rest_intervals,touch_coverage_intervals,touch_issues,...metrics}=r.metrics||summary(r);
-    return {schema:r.schema,trial_id:r.id,session_id:r.sessionId,participant:r.participant,condition:r.condition,block:r.block,trial:r.trial,kind:r.kind,status:r.status,language:r.language,started_at:r.startedAt,ended_at:r.endedAt,timezone:r.timezone,prompt:r.prompt,transcription:r.text,notes:r.notes,idle_threshold_ms:r.config.idleMs,baseline_rest_ms:r.config.restMs,...metrics,touch_issues};
-  }):all.flatMap(r=>[...r.events.map(e=>({...e,source:'browser'})),...(r.touch?.seed||[]).map(e=>({...e,type:'seed_contact',source:'touch'})),...(r.touch?.events||[]).map(e=>({...e,source:'touch'}))].sort((a,b)=>a.t-b.t).map(e=>({trial_id:r.id,participant:r.participant,condition:r.condition,block:r.block,trial:r.trial,kind:r.kind,status:r.status,...e})));
+    return {schema:r.schema,trial_id:r.id,session_id:r.sessionId,participant:r.participant,condition:r.condition,keyboard:r.paragraph?.keyboard,surface:r.paragraph?.surface,block:r.block,trial:r.trial,kind:r.kind,status:r.status,language:r.language,started_at:r.startedAt,ended_at:r.endedAt,timezone:r.timezone,prompt:r.prompt,transcription:r.text,notes:r.notes,idle_threshold_ms:r.config.idleMs,baseline_rest_ms:r.config.restMs,...metrics,...(r.paragraph?{home_left_target_mm:r.paragraph.home[0]?.deviationMm,
+      home_right_target_mm:r.paragraph.home[1]?.deviationMm,
+      stroke_count:r.metrics?.touch_quality==='complete'?P.strokes(r).length:null}:{}),touch_issues};
+  }):all.flatMap(r=>[...r.events.map(e=>({...e,source:'browser'})),...(r.touch?.seed||[]).map(e=>({...e,type:'seed_contact',source:'touch'})),...(r.touch?.events||[]).map(e=>({...e,...(r.paragraph?{phase:P.phaseAt(r.paragraph.phases,e.t).name,sentence:P.phaseAt(r.paragraph.phases,e.t).sentence}:{}),source:'touch'}))].sort((a,b)=>a.t-b.t).map(e=>({trial_id:r.id,participant:r.participant,condition:r.condition,keyboard:r.paragraph?.keyboard,surface:r.paragraph?.surface,block:r.block,trial:r.trial,kind:r.kind,status:r.status,...e})));
   download(`tapboard-${kind}-${stamp}.csv`,M.csv(rows),'text/csv;charset=utf-8');
 }
 const sessionId=id();
@@ -253,6 +302,7 @@ setInterval(async()=>{
   if(active?.config.touchEnabled){
     if(Math.abs(Date.now()-(active.startedUnix+time()))>50 && active.touchClockIssue==null){active.touchClockIssue=time();event('browser_clock_changed');notify('PC 시계 변경을 감지했습니다. 터치 시간 비교가 불완전하므로 앱과 페이지를 다시 시작하세요.');}
     captureTouch(active,time());
+    if(active.paragraph)processStudyTouch();
   }
 },250);
 $('start').onclick=start;$('rest').onclick=toggleRest;$('finish').onclick=()=>finish();$('abort').onclick=()=>finish('aborted');
@@ -285,7 +335,7 @@ $('typing').addEventListener('keydown', e=>{
   if (!e.repeat) nextPrompt();
 });
 for(const type of ['keydown','keyup']) $('typing').addEventListener(type,e=>{
-  if(!active || phase!=='typing') return;
+  if(!active || phase!=='typing' || browserTrial(active)) return;
   const typingKey=!(e.ctrlKey||e.metaKey||e.altKey) && (e.key.length===1 || ['Backspace','Delete','Enter','Process','Unidentified','Dead'].includes(e.key) || e.isComposing);
   event(type,{key:e.key,code:e.code,repeat:e.repeat,ctrl:e.ctrlKey,alt:e.altKey,shift:e.shiftKey,meta:e.metaKey,isComposing:e.isComposing,typingKey,selectionStart:$('typing').selectionStart,selectionEnd:$('typing').selectionEnd});
 });
@@ -322,6 +372,7 @@ setInterval(()=>{if(active){active.lastSavedMs=time();persist(active);}},1000);
 (async()=>{
   showPractice();
   renderPrompt();
+  initStudyUI();
   $('typing').focus({preventScroll:true});
   $('start').disabled=true;
   try {

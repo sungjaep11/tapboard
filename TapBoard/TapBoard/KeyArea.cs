@@ -136,7 +136,9 @@ namespace TapBoard
                 message.Result = IntPtr.Zero;
                 return;
             }
-            if (!TouchGestureSettings.HandleMessage(ref message)) base.WndProc(ref message);
+            IntPtr result;
+            if (TouchGestureSettings.HandleMessage(message.HWnd, message.Msg, out result)) message.Result = result;
+            else base.WndProc(ref message);
         }
 
         public void SetLabelState(bool korean, bool capsLock, bool physicalShift)
