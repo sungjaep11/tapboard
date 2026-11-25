@@ -1,6 +1,7 @@
 const P=TapParagraph, conv=new ConvBoardWindow();
 let gate=null, studyRun=null;
-const displayWidthMm=310, paragraphRestMs=5000;
+// The browser-only keyboard uses this panel's reported visible width. Native apps send their own calibration.
+const browserDisplayWidthMm=302, paragraphRestMs=5000;
 const integrated=()=>$('protocol').value==='paragraph';
 const isConv=()=>P.conditions[$('studyCondition').value].keyboard==='ConvBoard';
 const browserConv=()=>isConv() && $('convSource').value==='browser';
@@ -68,7 +69,7 @@ function previewParagraph() {
     count+'문단 · 총 '+count*3+'문장 · 문장 사이 3초 휴식 · 문단 사이 5초 손 떼기':'문단 수를 1~100 사이의 정수로 입력하세요.';
   $('progressBar').style.width='0%';
 }
-function calibration() {return {widthMm:displayWidthMm,pitchMm:$('pitchMm').valueAsNumber};}
+function calibration() {return {widthMm:browserConv()?browserDisplayWidthMm:touchLink.journal.meta?.widthMm,pitchMm:$('pitchMm').valueAsNumber};}
 function prepareStudyRun() {
   const total=requestedParagraphs();
   fillParagraphText();
@@ -89,6 +90,8 @@ function prepareParagraph(run) {
     // Native touch coordinates use physical pixels, independent of the upper browser's DPI/zoom.
     if(!Number.isSafeInteger(meta.widthPx) || meta.widthPx<=0)
       throw new Error('키보드 화면의 가로 해상도를 읽을 수 없습니다. 최신 키보드 앱을 실행하고 다시 연결하세요.');
+    if(!Number.isFinite(settings.widthMm) || settings.widthMm<=0)
+      throw new Error('키보드 앱의 화면 보정값(mm)이 없습니다. 최신 키보드 앱을 실행하고 다시 연결하세요.');
     g=P.geometry(meta.widthPx,settings.widthMm,settings.pitchMm,true,meta.pitchPx || null);
   }
   return {...c,runId:run.id,number:run.index+1,count:run.total,

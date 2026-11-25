@@ -147,10 +147,11 @@ namespace TapBoard
         private void Keyboard_Load(object sender, EventArgs e)
         {
             Screen screen = DisplayGeometry.SelectScreen();
-            int pitch = DisplayGeometry.GetPitch(screen);
+            double widthMm;
+            int pitch = DisplayGeometry.GetPitch(screen, out widthMm);
             StartPosition = FormStartPosition.Manual;
             Bounds = screen.Bounds;
-            keyArea.CreateKeys(pitch);
+            keyArea.CreateKeys(pitch, widthMm);
             // Avoid starting the audio engine when both feedback channels are disabled.
             if (KeyboardSettings.Current.TouchSoundEnabled || KeyboardSettings.Current.InputSoundEnabled)
                 clickFeedback = new ClickFeedback();

@@ -44,7 +44,7 @@ class Program
     {
         CheckHttp();
         string directory = args.Length > 0 ? args[0] : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tapboard-journal-check-" + Guid.NewGuid());
-        var log = new TouchExperimentLog(directory, 300);
+        var log = new TouchExperimentLog(directory, 300, widthPx: 1920, pitchPx: 125, widthMm: 300);
         log.Record("heartbeat");
         log.Record("down", 7, 10, 20, "TAPPER", "quote\" slash\\ newline\n한국어");
         // Exercise actual append/read sharing before closing the journal.
@@ -60,6 +60,8 @@ class Program
         log.Record("up", 7, 10, 20, "TAPPER"); log.Record("heartbeat"); log.Dispose(); log.Dispose();
         var lines = File.ReadAllLines(log.Path).Select(s => JsonDocument.Parse(s).RootElement.Clone()).ToArray();
         if (lines[0].GetProperty("schema").GetString() != "tapboard-touch/v1" || lines.Last().GetProperty("type").GetString() != "end") throw new Exception("Missing session/end");
+        if (lines[0].GetProperty("widthMm").GetDouble() != 300 || lines[0].GetProperty("widthPx").GetInt32() != 1920 ||
+            lines[0].GetProperty("pitchPx").GetInt32() != 125) throw new Exception("Monitor calibration was not preserved");
         for (int i = 0; i < lines.Length; i++)
         {
             if (lines[i].GetProperty("seq").GetInt32() != i) throw new Exception("Sequence gap");

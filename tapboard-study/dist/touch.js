@@ -69,7 +69,8 @@
       if(next) events.push(next);
       return {schema:SCHEMA,sessionId:this.meta.sessionId,startedUnixMs:this.meta.startedUnixMs,
         ...(this.meta.keyboard?{keyboard:this.meta.keyboard,activation:this.meta.activation,
-          nativeWidthPx:this.meta.widthPx,nativePitchPx:this.meta.pitchPx}:{}),
+          nativeWidthPx:this.meta.widthPx,nativePitchPx:this.meta.pitchPx,
+          ...(this.meta.widthMm>0?{nativeWidthMm:this.meta.widthMm}:{})}:{}),
         timeMapping:'native UTC anchor to browser UTC anchor on the same PC',thresholdMs,
         seed:Array.from(c.held.values(),map),events,error:this.error};
     }

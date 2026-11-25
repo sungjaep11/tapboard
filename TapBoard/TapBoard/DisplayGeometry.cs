@@ -33,9 +33,9 @@ namespace TapBoard
             return chosen ?? Screen.PrimaryScreen;
         }
 
-        public static int GetPitch(Screen screen)
+        public static int GetPitch(Screen screen, out double width)
         {
-            double width = KeyboardSettings.Current.DisplayWidthMm;
+            width = KeyboardSettings.Current.DisplayWidthMm;
             if (width <= 0)
             {
                 DisplayDevice device = new DisplayDevice(); device.cb = Marshal.SizeOf(device);

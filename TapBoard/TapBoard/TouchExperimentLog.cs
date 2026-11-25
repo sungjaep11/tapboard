@@ -38,11 +38,12 @@ namespace TapBoard
             return text.Append('"').ToString();
         }
 
-        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, bool direct = false)
+        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, bool direct = false, double widthMm = 0)
         {
             double startedUnixMs = UnixNow() - clock.Elapsed.TotalMilliseconds;
             string header = "{\"schema\":\"tapboard-touch/v1\",\"type\":\"session\",\"seq\":0,\"t\":0,\"sessionId\":" +
                 Quote(SessionId) + ",\"keyboard\":" + Quote(keyboard) + ",\"widthPx\":" + widthPx +
+                (widthMm > 0 ? ",\"widthMm\":" + Number(widthMm) : "") +
                 ",\"pitchPx\":" + pitchPx + ",\"startedUnixMs\":" + Number(startedUnixMs) + ",\"activation\":" + Quote(keyboard == "ConvBoard" ? "touch-down" : "tap-release") +
                 ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + "}";
             if (direct)

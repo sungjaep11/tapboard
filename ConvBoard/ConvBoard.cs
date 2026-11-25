@@ -100,7 +100,7 @@ namespace TapBoard
             Require(WindowsTouchInput.RegisterTouchWindow(hwnd,WindowsTouchInput.WantPalm),"멀티터치 등록 실패");
             TouchGestureSettings.Apply(hwnd);
             font=CreateFont(-Math.Max(10,(int)(pitch*.22)),0,0,0,400,0,0,0,1,0,0,5,0,"Malgun Gothic");
-            input.Diagnostics.StartExperiment(KeyboardName,screen.Width,pitch);
+            input.Diagnostics.StartExperiment(KeyboardName,screen.Width,pitch,mm);
             if(settings.FilterTouchMouse) mouse=new TouchMouseFilter(screen);
             if(settings.TouchSoundEnabled||settings.InputSoundEnabled) sound=new ClickFeedback();
             Require(SetTimer(hwnd,new UIntPtr(1),10,zero)!=UIntPtr.Zero,"키 반복 타이머 생성 실패");

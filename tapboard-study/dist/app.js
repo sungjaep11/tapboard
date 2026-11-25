@@ -32,11 +32,12 @@ function renderTouchStatus() {
   $('touchStatus').textContent = state.message;
   $('touchStatus').classList.toggle('connected', state.ok);
   const width=state.ok?(usingConv?conv.geometry?.widthPx:touchLink.journal.meta?.widthPx):null;
+  const widthMm=state.ok?(usingConv?conv.geometry?.widthMm:touchLink.journal.meta?.widthMm):null;
   const units=usingConv?'CSS px':'px (앱 좌표)';
-  $('displayCalibration').textContent='아래 화면 가로 '+displayWidthMm+'mm · '+
-    (Number.isSafeInteger(width) && width>0?'가로 '+width+' '+units:'키보드 연결 후 해상도 자동 감지');
+  $('displayCalibration').textContent=Number.isSafeInteger(width) && width>0 && Number.isFinite(widthMm) && widthMm>0?
+    '화면 보정 폭 '+widthMm+'mm · 가로 '+width+' '+units:'키보드 연결 후 화면 보정값 자동 감지';
 }
-const VERSION = '1.5.1', SCHEMA = 'tapboard-study/v1';
+const VERSION = '1.5.2', SCHEMA = 'tapboard-study/v1';
 const phrases = {
   en: mackenziePhrases,
   ko: ['오늘은 새로운 문장을 천천히 입력합니다.','키보드 위에 손을 편안하게 올려놓으세요.','작은 변화가 더 나은 경험을 만듭니다.','창문 너머로 따뜻한 햇살이 들어옵니다.','잠시 쉬었다가 다음 문장을 입력하세요.','정확하고 편안하게 타이핑하는 연습을 합니다.','책상 위에 놓인 노트를 펼쳐 보았습니다.','한 걸음씩 나아가면 목표에 도착합니다.']

@@ -9,12 +9,12 @@ namespace TapBoard
     internal sealed class TouchDiagnostics
     {
         internal TouchExperimentLog Experiment { get; private set; }
-        internal void StartExperiment(string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0)
+        internal void StartExperiment(string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, double widthMm = 0)
         {
             if (Experiment == null && KeyboardSettings.Current.ExperimentLogging)
                 Experiment = new TouchExperimentLog(System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx, KeyboardSettings.Current.DirectStudy);
+                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx, KeyboardSettings.Current.DirectStudy, widthMm);
         }
         private readonly bool traceTouches;
         private readonly string destination;
