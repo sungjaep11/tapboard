@@ -17,6 +17,8 @@ namespace TapBoard
         private readonly Queue<string> pending = new Queue<string>();
         private readonly Stopwatch clock = Stopwatch.StartNew();
         private readonly Thread worker;
+        private readonly StudyFeed feed;
+        private readonly LocalStudyServer server;
         private bool stopping;
         private long sequence;
         private volatile string failure;
@@ -36,14 +38,22 @@ namespace TapBoard
             return text.Append('"').ToString();
         }
 
-        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0)
+        internal TouchExperimentLog(string directory, int tapDurationMs, string keyboard = "TapBoard+", int widthPx = 0, int pitchPx = 0, bool direct = false)
         {
             double startedUnixMs = UnixNow() - clock.Elapsed.TotalMilliseconds;
-            Path = System.IO.Path.Combine(directory, (keyboard == "ConvBoard" ? "convboard-touch-" : "touch-") + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + SessionId + ".jsonl");
-            pending.Enqueue("{\"schema\":\"tapboard-touch/v1\",\"type\":\"session\",\"seq\":0,\"t\":0,\"sessionId\":" +
+            string header = "{\"schema\":\"tapboard-touch/v1\",\"type\":\"session\",\"seq\":0,\"t\":0,\"sessionId\":" +
                 Quote(SessionId) + ",\"keyboard\":" + Quote(keyboard) + ",\"widthPx\":" + widthPx +
                 ",\"pitchPx\":" + pitchPx + ",\"startedUnixMs\":" + Number(startedUnixMs) + ",\"activation\":" + Quote(keyboard == "ConvBoard" ? "touch-down" : "tap-release") +
-                ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + "}");
+                ",\"tapDurationMs\":" + (keyboard == "ConvBoard" ? "null" : tapDurationMs.ToString(CultureInfo.InvariantCulture)) + "}";
+            if (direct)
+            {
+                feed = new StudyFeed(SessionId, header);
+                try { server = new LocalStudyServer(feed); }
+                catch (Exception error) { failure = "직접 연결을 열 수 없습니다. 다른 키보드 앱을 종료한 뒤 다시 실행하세요. " + error.Message; }
+                return;
+            }
+            Path = System.IO.Path.Combine(directory, (keyboard == "ConvBoard" ? "convboard-touch-" : "touch-") + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + SessionId + ".jsonl");
+            pending.Enqueue(header);
             worker = new Thread(WriteLoop) { IsBackground = true, Name = "TapBoard experiment log" };
             worker.Start();
         }
@@ -59,10 +69,12 @@ namespace TapBoard
                     type = "gap";
                     stopping = true;
                 }
-                pending.Enqueue("{\"seq\":" + (++sequence) + ",\"t\":" + Number(clock.Elapsed.TotalMilliseconds) +
+                string row = "{\"seq\":" + (++sequence) + ",\"t\":" + Number(clock.Elapsed.TotalMilliseconds) +
                     ",\"type\":" + Quote(type) + ",\"id\":" + id + ",\"x\":" + x + ",\"y\":" + y +
                     ",\"keyType\":" + Quote(keyType) + ",\"detail\":" + Quote(detail) +
-                    (type == "heartbeat" ? ",\"wallUnixMs\":" + Number(UnixNow()) : "") + "}");
+                    (type == "heartbeat" ? ",\"wallUnixMs\":" + Number(UnixNow()) : "") + "}";
+                if (feed != null) feed.Append(sequence, type, id, row);
+                else pending.Enqueue(row);
                 if (stopping) Monitor.PulseAll(gate);
             }
         }
@@ -104,7 +116,8 @@ namespace TapBoard
                 if (!stopping) { Record("end"); stopping = true; Monitor.PulseAll(gate); }
             }
             // Bounded shutdown: a blocked disk must not trap the UI forever.
-            worker.Join(2000);
+            worker?.Join(2000);
+            server?.Dispose();
         }
     }
 }

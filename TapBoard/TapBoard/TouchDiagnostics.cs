@@ -14,7 +14,7 @@ namespace TapBoard
             if (Experiment == null && KeyboardSettings.Current.ExperimentLogging)
                 Experiment = new TouchExperimentLog(System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx);
+                    "TapBoard-Experiments"), KeyboardSettings.Current.TapDurationMs, keyboard, widthPx, pitchPx, KeyboardSettings.Current.DirectStudy);
         }
         private readonly bool traceTouches;
         private readonly string destination;

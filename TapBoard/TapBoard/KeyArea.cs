@@ -38,7 +38,7 @@ namespace TapBoard
             foreach (Key key in input.keys)
                 if (key.IsActive()) Invalidate(key.VisualBounds);
         }
-        public void CreateKeys(int pitch) { ppku = pitch; input.CreateKeys(pitch, Width); Invalidate(); }
+        public void CreateKeys(int pitch) { ppku = pitch; input.CreateKeys(pitch, Width); Diagnostics.StartExperiment("TapBoard+", Width, pitch); Invalidate(); }
         public bool IsShiftKeyOn() { return input.IsShiftKeyOn(); }
         public bool IsControlKeyOn() { return input.IsControlKeyOn(); }
         private void OnAutoRepeatTimerElapsed(object sender, EventArgs args) { input.Repeat(); }
@@ -157,7 +157,6 @@ namespace TapBoard
             input.KeyInput += (sender, args) => KeyInput?.Invoke(this, args);
             input.ModifiersChanged += (shift, control, alt) => ModifiersChanged?.Invoke(shift, control, alt);
             input.StateChanged += InvalidateKeyboard;
-            Diagnostics.StartExperiment();
 
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);

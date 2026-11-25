@@ -35,6 +35,7 @@ namespace TapBoard
         internal readonly double InputGain = Number("InputGain", 0.12, 0, 1);
         internal readonly double TouchDurationSeconds = Number("TouchDurationMs", 70, 1, 1000) / 1000;
         internal readonly double InputDurationSeconds = Number("InputDurationMs", 60, 1, 1000) / 1000;
+        internal readonly bool DirectStudy = !string.Equals(Text("ExperimentConnection"), "file", StringComparison.OrdinalIgnoreCase);
         internal readonly bool ExperimentLogging = Boolean("ExperimentLogging", false);
         internal readonly bool TraceTouches = Boolean("TraceTouches", false);
         internal readonly bool FilterTouchMouse = Boolean("FilterTouchMouse", true);

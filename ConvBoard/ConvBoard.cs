@@ -31,7 +31,14 @@ namespace TapBoard
 
     internal sealed class ConvBoard : IDisposable
     {
-        private readonly KeyboardInputController input=new KeyboardInputController(true);
+#if TAPBOARD_STUDY
+        private const string KeyboardName="TapBoard+";
+        private static readonly bool Conventional=false;
+#else
+        private const string KeyboardName="ConvBoard";
+        private static readonly bool Conventional=true;
+#endif
+        private readonly KeyboardInputController input=new KeyboardInputController(Conventional);
         private readonly WindowsKeyboardOutput output=new WindowsKeyboardOutput();
         private readonly WindowProc callback;
         private readonly KeyboardSettings settings=KeyboardSettings.Current;
@@ -58,7 +65,7 @@ namespace TapBoard
                 using(var app=new ConvBoard()) app.Run();
                 return 0;
             }
-            catch(Exception ex) {MessageBox(zero,ex.GetBaseException().Message,"ConvBoard",0x10);return 1;}
+            catch(Exception ex) {MessageBox(zero,ex.GetBaseException().Message,KeyboardName,0x10);return 1;}
         }
         private ConvBoard()
         {
@@ -76,7 +83,7 @@ namespace TapBoard
             var r=display.bounds;
             screen=Rectangle.FromLTRB(r.left,r.top,r.right,r.bottom);
             double mm=settings.DisplayWidthMm>0?settings.DisplayWidthMm:WidthMm(display.device);
-            if(mm<=0) throw new InvalidOperationException("ConvBoard.exe.config의 DisplayWidthMm에 아래 화면의 실제 가로 길이(mm)를 입력하세요.");
+            if(mm<=0) throw new InvalidOperationException("키보드 앱 설정 파일의 DisplayWidthMm에 아래 화면의 실제 가로 길이(mm)를 입력하세요.");
             pitch=Math.Max(1,(int)Math.Round(screen.Width*settings.KeyPitchMm/mm));
             if(pitch*KeyboardLayout.LayoutWidthUnits>screen.Width || pitch*KeyboardLayout.LayoutHeightUnits>screen.Height)
                 throw new InvalidOperationException("키보드가 화면보다 큽니다. KeyboardDisplay와 DisplayWidthMm을 확인하세요.");
@@ -84,16 +91,16 @@ namespace TapBoard
             var instance=GetModuleHandle(null);
             var arrow=LoadCursor(zero,new IntPtr(IDC_ARROW));
             Require(arrow!=zero,"기본 마우스 커서를 불러올 수 없습니다.");
-            var wc=new WindowClass { size=(uint)Marshal.SizeOf(typeof(WindowClass)),className="ConvBoardKeyboard",callback=callback,instance=instance,cursor=arrow };
-            Require(RegisterClassEx(ref wc)!=0,"ConvBoard 창 등록 실패");
+            var wc=new WindowClass { size=(uint)Marshal.SizeOf(typeof(WindowClass)),className=KeyboardName+"Keyboard",callback=callback,instance=instance,cursor=arrow };
+            Require(RegisterClassEx(ref wc)!=0,"키보드 창 등록 실패");
             // WS_EX_TOPMOST | WS_EX_NOACTIVATE, WS_POPUP. Input stays with the upper screen.
-            hwnd=CreateWindowEx(0x08000008,wc.className,"ConvBoard",0x80000000,
+            hwnd=CreateWindowEx(0x08000008,wc.className,KeyboardName,0x80000000,
                 screen.X,screen.Y,screen.Width,screen.Height,zero,zero,instance,zero);
-            Require(hwnd!=zero,"ConvBoard 창 생성 실패");
+            Require(hwnd!=zero,"키보드 창 생성 실패");
             Require(WindowsTouchInput.RegisterTouchWindow(hwnd,WindowsTouchInput.WantPalm),"멀티터치 등록 실패");
             TouchGestureSettings.Apply(hwnd);
             font=CreateFont(-Math.Max(10,(int)(pitch*.22)),0,0,0,400,0,0,0,1,0,0,5,0,"Malgun Gothic");
-            input.Diagnostics.StartExperiment("ConvBoard",screen.Width,pitch);
+            input.Diagnostics.StartExperiment(KeyboardName,screen.Width,pitch);
             if(settings.FilterTouchMouse) mouse=new TouchMouseFilter(screen);
             if(settings.TouchSoundEnabled||settings.InputSoundEnabled) sound=new ClickFeedback();
             Require(SetTimer(hwnd,new UIntPtr(1),10,zero)!=UIntPtr.Zero,"키 반복 타이머 생성 실패");
@@ -117,7 +124,7 @@ namespace TapBoard
                     case 0x0f: Paint(window);return zero;
                     case WindowsTouchInput.Message: Touch(w,l);return zero;
                     case 0x113: if(w.ToInt64()==1) input.Repeat();else Refresh();return zero;
-                    case 0x7e: throw new InvalidOperationException("디스플레이 구성이 변경되었습니다. ConvBoard를 다시 실행하세요.");
+                    case 0x7e: throw new InvalidOperationException("디스플레이 구성이 변경되었습니다. 키보드 앱을 다시 실행하세요.");
                     case 0x10: DestroyWindow(window);return zero;
                     case 0x02:
                         WindowsTouchInput.UnregisterTouchWindow(window);
@@ -140,13 +147,17 @@ namespace TapBoard
                 uint count=(uint)(w.ToInt64()&0xffff);
                 var samples=new WindowsTouchInput.NativeTouch[count];
                 Require(WindowsTouchInput.GetTouchInputInfo(packet,count,samples,Marshal.SizeOf(typeof(WindowsTouchInput.NativeTouch))),"터치 패킷 읽기 실패");
+                if(!Conventional)
+                    foreach(var s in samples)
+                        if((s.flags&WindowsTouchInput.Down)!=0)
+                            input.TrackKeyDown((int)s.id,(int)Math.Round(s.x/100.0)-screen.X,(int)Math.Round(s.y/100.0)-screen.Y);
                 foreach(var s in samples)
                 {
                     int id=(int)s.id;
                     var pt=new Point((int)Math.Round(s.x/100.0)-screen.X,(int)Math.Round(s.y/100.0)-screen.Y);
                     bool down=(s.flags&WindowsTouchInput.Down)!=0,up=(s.flags&WindowsTouchInput.Up)!=0;
                     if(!down && !up && (s.flags&WindowsTouchInput.Move)==0) continue;
-                    if(down) input.TrackKeyDown(id,pt.X,pt.Y);
+                    if(Conventional && down) input.TrackKeyDown(id,pt.X,pt.Y);
                     var key=input.GetContactKey(id);
                     input.Diagnostics.Experiment?.Record(down?"down":up?"up":"move",id,pt.X,pt.Y,
                         key==null?"BLANK":key.Definition.type.ToString(),s.time+";flags="+s.flags);
@@ -169,7 +180,7 @@ namespace TapBoard
                 WarnOnce(ref filterWarning,mouse.InstallError.ToString(),"터치 마우스 필터를 시작할 수 없습니다.");
             WarnOnce(ref audioWarning,sound?.Failure,"입력 소리를 재생할 수 없습니다.");
             bool newCaps=(GetKeyState(0x14)&1)!=0, newShift=GetKeyState(0x10)<0;
-            if(newCaps!=caps || newShift!=physicalShift || displayedKorean!=korean)
+            if((!Conventional && input.keys.Exists(key=>key.IsActive())) || newCaps!=caps || newShift!=physicalShift || displayedKorean!=korean)
             {
                 caps=newCaps;physicalShift=newShift;displayedKorean=korean;InvalidateRect(hwnd,zero,false);
             }
@@ -183,7 +194,7 @@ namespace TapBoard
         {
             if(reported || detail==null) return;
             reported=true;
-            MessageBox(hwnd,message+"\n"+detail,"ConvBoard",0x30);
+            MessageBox(hwnd,message+"\n"+detail,KeyboardName,0x30);
         }
         private static uint Rgb(Color c) {return (uint)(c.R | c.G<<8 | c.B<<16);}
         private void Paint(IntPtr window)
@@ -201,6 +212,13 @@ namespace TapBoard
                     var b=key.VisualBounds;b.Inflate(-pitch/15,-pitch/15);
                     var rect=new Rect{left=b.Left,top=b.Top,right=b.Right,bottom=b.Bottom};
                     Color color=key.IsActive()?KeyboardTheme.Active:key.GetName()=="{CAPSLOCK}"&&caps?KeyboardTheme.CapsLock:key.Definition.color;
+                    if(!Conventional && input.IsLocked)
+                    {
+                        var palette=key.GetName()=="{CAPSLOCK}"&&caps?KeyboardTheme.CapsLock:key.Definition.color;
+                        double level=settings.LockedBrightness;
+                        color=Color.FromArgb((int)(palette.R*level),(int)(palette.G*level),(int)(palette.B*level));
+                    }
+                    else if(!Conventional && key.IsActive() && key.IsExpired()) color=KeyboardTheme.Resting;
                     SetDCBrushColor(dc,Rgb(color));
                     FillRect(dc,ref rect,GetStockObject(18));FrameRect(dc,ref rect,GetStockObject(0));
                     DrawText(dc,key.GetLabel(input.IsShiftKeyOn()||physicalShift,displayedKorean,caps),-1,ref rect,0x825);

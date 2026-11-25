@@ -39,13 +39,14 @@ test('sentence timings exclude the rest and first character includes corrected m
 
 // Run the public standalone scripts with deterministic DOM, sensor and time inputs.
 // This exercises the same buttons, start/submit functions, exports and map drawing as the offline file.
-function lab(code,source='browser',journalKeyboard=null) {
+function lab(code,source='browser',journalKeyboard=null,autostart=true,direct=false) {
   const html=fs.readFileSync(path.join(__dirname,'../../tapboard-test.html'),'utf8');
   const elements=new Map(), timers=[];
   class Element {
-    constructor(){this.value='';this.classList={toggle(){}};this.events={};this.style={};this.width=1050;this.height=385;this.selectionStart=0;this.selectionEnd=0;this.hidden=false;}
+    constructor(){this.checked=false;this.value='';this.classList={toggle(){}};this.events={};this.style={};this.width=1050;this.height=385;this.selectionStart=0;this.selectionEnd=0;this.hidden=false;}
     get valueAsNumber(){return this.value===''?NaN:Number(this.value);}
-    focus(){} append(){} replaceChildren(){} remove(){} reportValidity(){return true;}
+    focus(){} append(...nodes){this.textContent=(this.textContent||'')+nodes.map(n=>n.textContent||'').join('');}
+    replaceChildren(...nodes){this.textContent='';this.append(...nodes);} remove(){} reportValidity(){return true;}
     addEventListener(name,fn){(this.events[name]??=[]).push(fn);}
     getContext(){return {fillRect(){},strokeRect(){},beginPath(){},arc(){},fill(){},stroke(){},moveTo(){},lineTo(){},fillText(){}};}
     setRangeText(str,start,end){this.value=this.value.slice(0,start)+str+this.value.slice(end);this.selectionStart=this.selectionEnd=start+str.length;}
@@ -61,6 +62,7 @@ function lab(code,source='browser',journalKeyboard=null) {
     Blob,URL,TextDecoder,navigator:{userAgent:'test'},screen:{width:1550,height:900},innerWidth:1550,innerHeight:900,devicePixelRatio:1,
     indexedDB:{open(){return {}; }},addEventListener(){}});
   ctx.window=ctx;
+  if(direct) Object.assign(ctx,{location:{origin:'http://127.0.0.1:47831'},AbortController,clearTimeout(){}});
   const run=code=>vm.runInContext(code,ctx);
   for(const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) run(match[1]);
   run(`db={transaction(){const tx={objectStore(){return {put(){queue(tx)}}}};return tx}};
@@ -76,9 +78,31 @@ function lab(code,source='browser',journalKeyboard=null) {
        function tick(type,t,id=0,x=0,y=0){feed(type,t,id,x,y);if(active){captureTouch(active,time());processStudyTouch();}}
        function typeChar(c){if(browserTrial(active))convKey(c,false,false,'keydown',4);
          else {$('typing').value+=c;commitText('insertText');}}
-       $('start').onclick();`);
+       `);
+  if(autostart) run("$('start').onclick()");
   return {run,elements};
 }
+test('paragraph setup previews editable sentences and explains blocked starts at the controls',()=>{
+  const {run,elements}=lab('C','native',null,false);
+  assert.equal(elements.get('prompt').textContent,'ab');
+  run("$('paragraphText').value='first sentence\\nsecond';$('paragraphText').oninput();touchLink.handle=null;$('start').onclick()");
+  assert.equal(elements.get('prompt').textContent,'first sentence');
+  assert.match(elements.get('cueText').textContent,/연결/);
+  assert.equal(run('active'),null);
+  run("touchLink.handle={};$('widthMm').value='';$('start').onclick()");
+  assert.match(elements.get('cueText').textContent,/가로 길이/);
+  run("$('widthMm').value='310';$('start').onclick()");
+  assert.equal(run('phase'),'hands_off');assert.equal(elements.get('prompt').textContent,'');
+  run("tick('heartbeat',100);tick('down',120,1);tick('down',140,2);tick('up',160,1);tick('up',170,2);tick('heartbeat',200)");
+  assert.equal(elements.get('prompt').textContent,'first sentence');
+});
+test('single sentence logging starts with a visible prompt without a native keyboard',()=>{
+  const {run,elements}=lab('C','native',null,false);
+  run("$('protocol').value='single';$('protocol').onchange();touchLink.handle=null;$('restSeconds').value='0';$('start').onclick()");
+  assert.equal(run('phase'),'typing');
+  assert.equal(elements.get('prompt').textContent,'my watch fell in the water');
+  assert.equal(run('active.config.touchEnabled'),false);
+});
 for(const code of ['A','B','C','D'])test(code+' standalone paragraph from hands-off to maps and export',async()=>{
   const {run,elements}=lab(code);
   assert.equal(run('phase'),'hands_off');
@@ -155,4 +179,26 @@ test('native A/B and C/D reject a journal from the other keyboard',()=>{
     assert.equal(labState.run('active'),null);
     assert.match(labState.elements.get('notice').textContent,/터치 로그/);
   }
+});
+
+test('the served standalone uses the direct feed to start, show a sentence and detect an app switch',async()=>{
+  const {run,elements}=lab('C','native',null,false,true);
+  assert.equal(elements.get('connectTouch').hidden,true);
+  await run(`delete touchLink.poll;touchLink.journal=new TapTouch.Journal();
+    let reply={session:j.meta,seed:[],heartbeat:j.heartbeat,cursor:j.lastSeq};
+    window.fetch=async()=>({ok:true,json:async()=>reply});touchLink.poll()`);
+  run("$('start').onclick()");assert.equal(run('phase'),'hands_off');
+  async function batch(events,at) {
+    await run(`clock=${at};reply={events:${JSON.stringify(events)}.map(([type,t,id=0],i)=>({type,t,id,seq:touchLink.journal.lastSeq+i+1,
+        keyType:'TAPPER',x:530+id*80,y:290,...(type==='heartbeat'?{wallUnixMs:100000+t}:{})}))};
+      touchLink.poll()`);
+    run("captureTouch(active,time());processStudyTouch()");
+  }
+  await batch([['heartbeat',100]],100);
+  await batch([['down',110,1],['down',115,2]],120);
+  await batch([['up',140,1],['up',145,2],['heartbeat',150]],150);
+  assert.equal(run('phase'),'typing');assert.equal(elements.get('prompt').textContent,'ab');
+  await run("reply={session:{...j.meta,sessionId:'other'},seed:[],cursor:0,heartbeat:null};touchLink.poll()");
+  run("captureTouch(active,time());processStudyTouch()");
+  assert.equal(run('phase'),'fault');assert.equal(run('active.touch.sessionId'),'s');
 });

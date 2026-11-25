@@ -24,4 +24,8 @@
       <HintPath>$(MSBuildBinPath)/System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../TapBoard/LocalStudyServer.cs" />
+    <EmbeddedResource Include="../../../tapboard-test.html"><LogicalName>tapboard-test.html</LogicalName></EmbeddedResource>
+  </ItemGroup>
 </Project>

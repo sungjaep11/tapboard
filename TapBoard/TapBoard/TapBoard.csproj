@@ -157,4 +157,8 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <ItemGroup>
+    <Compile Include="LocalStudyServer.cs" />
+    <EmbeddedResource Include="../../tapboard-test.html"><LogicalName>tapboard-test.html</LogicalName></EmbeddedResource>
+  </ItemGroup>
 </Project>

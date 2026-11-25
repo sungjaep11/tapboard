@@ -20,16 +20,24 @@ sdk = Path(directory) / version
 destination = study / "dist/downloads/ConvBoard-Windows.zip"
 with TemporaryDirectory() as temp:
     work = Path(temp)
-    exe = work / "ConvBoard.exe"
-    subprocess.run(["dotnet", str(sdk / "Roslyn/bincore/csc.dll"), "-nologo", "-noconfig",
-                    "-nostdlib+", "-target:winexe", "-platform:anycpu", "-optimize+", "-deterministic+",
-                    "-define:CONVBOARD", "-runtimeMetadataVersion:v4.0.30319", "-r:" + str(sdk / "ref/netstandard.dll"),
-                    "-out:" + str(exe), *map(str, sources)], check=True)
     html = work / "tapboard-test.html"
     subprocess.run([sys.executable, str(study / "build-standalone.py"), str(html)], check=True)
+    shortcut = work / "Open-Study.url"
+    shortcut.write_bytes(b"[InternetShortcut]\r\nURL=http://127.0.0.1:47831/\r\n")
     archive = work / destination.name
     with ZipFile(archive, "w", ZIP_DEFLATED) as bundle:
-        for file in [exe, project / "ConvBoard.exe.config", html, project / "README.md"]:
+        for name, defines, config in [
+            ("ConvBoard", "CONVBOARD", project / "ConvBoard.exe.config"),
+            ("TapBoard", "CONVBOARD,TAPBOARD_STUDY", root / "TapBoard/TapBoard/app.config"),
+        ]:
+            exe = work / (name + ".exe")
+            subprocess.run(["dotnet", str(sdk / "Roslyn/bincore/csc.dll"), "-nologo", "-noconfig",
+                            "-nostdlib+", "-target:winexe", "-platform:anycpu", "-optimize+", "-deterministic+",
+                            "-define:" + defines, "-runtimeMetadataVersion:v4.0.30319", "-r:" + str(sdk / "ref/netstandard.dll"),
+                            "-resource:" + str(html) + ",tapboard-test.html", "-out:" + str(exe), *map(str, sources)], check=True)
+            bundle.write(exe, exe.name)
+            bundle.write(config, exe.name + ".config")
+        for file in [shortcut, html, project / "README.md"]:
             bundle.write(file, file.name)
     destination.write_bytes(archive.read_bytes())
 print(destination)

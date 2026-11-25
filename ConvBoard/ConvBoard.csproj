@@ -14,4 +14,8 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../TapBoard/TapBoard/LocalStudyServer.cs" />
+    <EmbeddedResource Include="../tapboard-test.html"><LogicalName>tapboard-test.html</LogicalName></EmbeddedResource>
+  </ItemGroup>
 </Project>

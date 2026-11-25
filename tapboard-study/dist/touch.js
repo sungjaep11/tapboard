@@ -146,18 +146,86 @@
     }
     status(now=Date.now()){
       if(this.failure)return {ok:false,message:this.failure};
-      const j=this.journal,h=j.heartbeat;
       if(!this.handle)return {ok:false,message:'연결 안 됨'};
-      if(!h)return {ok:false,message:'로그를 읽는 중 · 새 앱의 로그인지 확인하세요'};
-      if(j.integrityFault)return {ok:false,message:'터치 이벤트 손실 감지 · 앱을 다시 시작하고 새 로그를 연결하세요'};
-      if(j.ended)return {ok:false,message:'Tapboard 종료됨 · 새 실행의 로그를 연결하세요'};
+      return journalStatus(this.journal,now,'로그를 읽는 중 · 새 앱의 로그인지 확인하세요','터치 기록 중단 · 앱을 다시 시작하고 새 로그를 연결하세요');
+    }
+  }
+  function journalStatus(j,now,waiting,lost) {
+      const h=j.heartbeat;
+      if(!h)return {ok:false,message:waiting};
+      if(j.integrityFault)return {ok:false,message:lost};
+      if(j.ended)return {ok:false,message:lost};
       const drift=Math.abs(h.wallUnixMs-(j.meta.startedUnixMs+h.t));
       if(drift>50)return {ok:false,message:'PC 시계 변경 감지 · 앱과 페이지를 다시 시작하세요'};
       const age=now-(j.meta.startedUnixMs+h.t);
       if(age< -100||age>2000)return {ok:false,message:'로그 신호 끊김 · 같은 PC의 실행 중인 앱인지 확인하세요'};
       return {ok:true,message:'실시간 연결됨',ageMs:age,sessionId:j.meta.sessionId};
+  }
+  class LocalLink {
+    constructor(pinned, request=(path, options)=>root.fetch(path,options)) {
+      this.pinned=pinned;
+      this.request=request;
+      this.journal=new Journal();
+      this.busy=null;
+      this.failure=null;
+      this.discontinuity=false;
+    }
+    poll() {
+      if(!this.busy) this.busy=this.read().finally(()=>{ this.busy=null; });
+      return this.busy;
+    }
+    async read() {
+      if(this.discontinuity && this.pinned()) return;
+      const old=this.journal;
+      const compact=!this.pinned() && old.rows.length>12000;
+      const resume=old.meta && !this.discontinuity && !compact;
+      const path=resume?'/touch?session='+encodeURIComponent(old.meta.sessionId)+'&after='+old.lastSeq:'/touch';
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),1500);
+      try {
+        const response=await this.request(path,{headers:{'X-TapBoard-Study':'1'},cache:'no-store',signal:controller.signal});
+        if(!response.ok) throw new Error('키보드 앱 응답 오류 ('+response.status+')');
+        const data=await response.json();
+        if(data.session) {
+          if(old.meta && this.pinned()) {
+            // An idle compaction request may complete just after Start was pressed.
+            if(compact && data.session.sessionId===old.meta.sessionId) return;
+            this.discontinuity=true;
+            throw new Error('키보드 앱이 바뀌었거나 터치 이벤트가 누락되었습니다. 현재 회차를 중단하세요.');
+          }
+          const j=new Journal();
+          j.feed(JSON.stringify(data.session)+'\n');
+          if(!Number.isSafeInteger(data.cursor) || data.cursor<0 || !Array.isArray(data.seed)) throw new Error('터치 연결 응답이 올바르지 않습니다.');
+          const seed=[...data.seed];
+          if(data.heartbeat) seed.push(data.heartbeat);
+          seed.sort((a,b)=>a.seq-b.seq);
+          for(const row of seed) {
+            if(!['heartbeat','down'].includes(row.type) || row.seq<=j.lastSeq || row.seq>data.cursor)
+              throw new Error('터치 시작 상태가 올바르지 않습니다.');
+            j.lastSeq=row.seq-1;
+            j.feed(JSON.stringify(row)+'\n');
+          }
+          j.lastSeq=data.cursor;
+          this.journal=j;
+          this.discontinuity=false;
+        } else {
+          if(!resume || !Array.isArray(data.events)) throw new Error('터치 이벤트를 읽을 수 없습니다.');
+          if(data.events.length) old.feed(data.events.map(e=>JSON.stringify(e)).join('\n')+'\n');
+        }
+        this.failure=null;
+      } catch(error) {
+        this.failure=this.discontinuity || old.error?error.message:'키보드 앱 연결 대기 중 · 같은 PC에서 실험용 앱을 실행하세요.';
+        if(old.error || this.discontinuity) {
+          this.discontinuity=true;
+          old.error=this.failure;
+        }
+      } finally {clearTimeout(timeout);}
+    }
+    status(now=Date.now()) {
+      if(this.failure) return {ok:false,message:this.failure};
+      return journalStatus(this.journal,now,'키보드 앱 연결 중','키보드 신호가 끊겼습니다. 앱을 확인하세요.');
     }
   }
-  root.TapTouch={Journal,FileLink,summarize};
+  root.TapTouch={Journal,FileLink,LocalLink,summarize};
   if(typeof module!=='undefined')module.exports=root.TapTouch;
 })(typeof window!=='undefined'?window:globalThis);

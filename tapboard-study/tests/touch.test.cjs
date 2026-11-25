@@ -79,3 +79,36 @@ test('incremental capture incorporates late pre-trial contact data and supports 
  assert.equal(initial.seed.length,0);
  assert.equal(j.capture(1000250,10,300).seed.length,0);
 });
+
+test('direct link resumes in sequence, preserves held fingers, and pins the source during recording',async()=>{
+ const {LocalLink}=require('../dist/touch.js');
+ const header=journal([]).meta, held={seq:7,t:100,type:'down',id:4,x:3,y:8,keyType:'TAPPER'};
+ const first={session:header,seed:[held],heartbeat:{seq:9,t:200,type:'heartbeat',wallUnixMs:1000200},cursor:12};
+ let reply=first,pinned=false,calls=0,path;
+ const link=new LocalLink(()=>pinned,async(url,options)=>{
+   calls++;path=url;assert.equal(options.headers['X-TapBoard-Study'],'1');
+   return {ok:true,json:async()=>reply};
+ });
+ await Promise.all([link.poll(),link.poll()]);
+ assert.equal(calls,1);assert.equal(path,'/touch');assert.equal(link.status(1000250).ok,true);
+ assert.equal(link.journal.capture(1000250,50,300).seed[0].seq,7);
+ pinned=true;
+ reply={events:[{seq:13,t:300,type:'up',id:4,x:3,y:8,keyType:'TAPPER'}]};
+ await link.poll();assert.equal(path,'/touch?session='+header.sessionId+'&after=12');
+ assert.equal(link.journal.lastSeq,13);
+ reply={...first,session:{...header,sessionId:'restart',keyboard:'ConvBoard'}};
+ await link.poll();assert.equal(link.status().ok,false);
+ assert.equal(link.journal.meta.sessionId,header.sessionId);assert.ok(link.journal.capture(1000250,100,300).error);
+ pinned=false;await link.poll();assert.equal(path,'/touch');assert.equal(link.journal.meta.sessionId,'restart');
+});
+test('direct link detects a dropped batch and resumes with a snapshot between trials',async()=>{
+ const {LocalLink}=require('../dist/touch.js');
+ const header=journal([]).meta;
+ let reply={session:header,seed:[],heartbeat:null,cursor:5},pinned=false;
+ const link=new LocalLink(()=>pinned,async()=>({ok:true,json:async()=>reply}));
+ await link.poll();pinned=true;
+ reply={events:[{seq:7,t:100,type:'end'}]};await link.poll();assert.equal(link.status().ok,false);
+ const original=link.journal;
+ reply={session:header,seed:[],heartbeat:null,cursor:7};await link.poll();assert.equal(link.journal,original);
+ pinned=false;await link.poll();assert.notEqual(link.journal,original);assert.equal(link.journal.lastSeq,7);
+});

@@ -7,8 +7,42 @@ using TapBoard;
 
 class Program
 {
+    static string ReadHttp(StudyFeed feed, string path, string host = "127.0.0.1:47831", string extra = "X-TapBoard-Study: 1\r\n")
+    {
+        var bytes = System.Text.Encoding.UTF8;
+        var assembly = typeof(Program).Assembly;
+        using var embedded = assembly.GetManifestResourceStream("tapboard-test.html");
+        using var page = new MemoryStream();
+        embedded.CopyTo(page);
+        using var request = new MemoryStream(bytes.GetBytes("GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\n" + extra + "\r\n"));
+        using var response = new MemoryStream();
+        LocalStudyServer.Serve(request, response, page.ToArray(), feed);
+        return bytes.GetString(response.ToArray());
+    }
+    static void CheckHttp()
+    {
+        var feed = new StudyFeed("demo","{\"sessionId\":\"demo\"}");
+        feed.Append(1,"down",3,"{\"seq\":1}");
+        feed.Append(2,"heartbeat",0,"{\"seq\":2}");
+        string Get(string path) => ReadHttp(feed,path).Split("\r\n\r\n",2)[1];
+        if (!Get("/").Contains("로깅 시작") || !Get("/").Contains("class LocalLink")) throw new Exception("Embedded HTML");
+        if (!Get("/touch").Contains("\"seed\":[{\"seq\":1}]") || !Get("/touch").Contains("\"heartbeat\":{\"seq\":2}")) throw new Exception("Held contacts at attach");
+        if (Get("/touch?session=demo&after=1") != "{\"events\":[{\"seq\":2}]}") throw new Exception("Incremental rows");
+        if (!ReadHttp(feed,"/touch",extra:"").StartsWith("HTTP/1.1 404") ||
+            !ReadHttp(feed,"/touch","foreign.test").StartsWith("HTTP/1.1 403") ||
+            !ReadHttp(feed,"/touch",extra:"Origin: https://foreign.test\r\nX-TapBoard-Study: 1\r\n").StartsWith("HTTP/1.1 403"))
+            throw new Exception("Local request boundary");
+        for(int i=3;i<=32772;i++) feed.Append(i,"up",3,"{\"seq\":"+i+"}");
+        if(!Get("/touch?session=demo&after=1").Contains("\"cursor\":32772") || !Get("/touch?session=stale&after=32772").Contains("\"seed\":[]"))
+            throw new Exception("Overrun or restart");
+        using var batch = JsonDocument.Parse(Get("/touch?session=demo&after=4"));
+        if(batch.RootElement.GetProperty("events").GetArrayLength()!=2048) throw new Exception("Batch cap");
+        Console.WriteLine("PASS: embedded study, HTTP framing, origin, cursor replay, held contacts, restart and ring rollover.");
+    }
+
     static void Main(string[] args)
     {
+        CheckHttp();
         string directory = args.Length > 0 ? args[0] : System.IO.Path.Combine(System.IO.Path.GetTempPath(), "tapboard-journal-check-" + Guid.NewGuid());
         var log = new TouchExperimentLog(directory, 300);
         log.Record("heartbeat");
