@@ -1,6 +1,6 @@
 const P=TapParagraph, conv=new ConvBoardWindow();
 let gate=null, studyRun=null;
-const displayWidthMm=310, displayWidthPx=1280, paragraphRestMs=5000;
+const displayWidthMm=310, paragraphRestMs=5000;
 const integrated=()=>$('protocol').value==='paragraph';
 const isConv=()=>P.conditions[$('studyCondition').value].keyboard==='ConvBoard';
 const browserConv=()=>isConv() && $('convSource').value==='browser';
@@ -86,13 +86,15 @@ function prepareParagraph(run) {
     const status=nativeStudyStatus();
     if(!status.ok) throw new Error(status.message+' · '+(directStudy?c.keyboard+' 앱과 선택한 조건을 확인하세요.':c.keyboard+' 앱의 직접 연결 페이지를 열거나 터치 로그를 연결하세요.'));
     const meta=touchLink.journal.meta;
-    if(meta.widthPx && meta.widthPx!==displayWidthPx) throw new Error('키보드 화면의 가로 해상도가 '+meta.widthPx+'px입니다. Windows에서 아래 화면을 1280px로 설정하세요.');
-    g=P.geometry(displayWidthPx,settings.widthMm,settings.pitchMm,true,meta.pitchPx || null);
+    // Native touch coordinates use physical pixels, independent of the upper browser's DPI/zoom.
+    if(!Number.isSafeInteger(meta.widthPx) || meta.widthPx<=0)
+      throw new Error('키보드 화면의 가로 해상도를 읽을 수 없습니다. 최신 키보드 앱을 실행하고 다시 연결하세요.');
+    g=P.geometry(meta.widthPx,settings.widthMm,settings.pitchMm,true,meta.pitchPx || null);
   }
   return {...c,runId:run.id,number:run.index+1,count:run.total,
     touchSource:browserConv()?'browser-pointer':'windows-touch',condition:code,geometry:g,home:[],phases:[],sentences:sentences.map((prompt,index)=>({
     index,prompt,text:'',cueMs:null,submittedMs:null})),index:0,restMs:P.restMs,paragraphRestMs,
-    restPolicy:'timed',displayWidthPx,minDurationMs:P.minDurationMs,
+    restPolicy:'timed',displayWidthPx:g.widthPx,minDurationMs:P.minDurationMs,
     minPathMm:P.minPathMm,distanceDefinition:'sum of consecutive touch sample distances',handRule:'two index fingers only; left/right ordered by initial x'};
 }
 function paragraphProgress(p) {return '문단 '+p.number+' / '+p.count+' · 문장 '+(p.index+1)+' / '+p.sentences.length;}

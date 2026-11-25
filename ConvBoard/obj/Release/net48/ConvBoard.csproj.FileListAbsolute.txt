@@ -1,0 +1,11 @@
+C:\Users\HCIL\Documents\tapboard\ConvBoard\bin\Release\net48\ConvBoard.exe.config
+C:\Users\HCIL\Documents\tapboard\ConvBoard\bin\Release\net48\ConvBoard.exe
+C:\Users\HCIL\Documents\tapboard\ConvBoard\bin\Release\net48\ConvBoard.pdb
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.csproj.AssemblyReference.cache
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.AssemblyInfoInputs.cache
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.AssemblyInfo.cs
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.csproj.CoreCompileInputs.cache
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.sourcelink.json
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.exe
+C:\Users\HCIL\Documents\tapboard\ConvBoard\obj\Release\net48\ConvBoard.pdb

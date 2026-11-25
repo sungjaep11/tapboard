@@ -104,6 +104,48 @@ test('single sentence logging starts with a visible prompt without a native keyb
   assert.equal(elements.get('prompt').textContent,'my watch fell in the water');
   assert.equal(run('active.config.touchEnabled'),false);
 });
+for(const code of ['A','B','C','D']) test(code+' accepts 1920px native coordinates with a 150% scaled browser',()=>{
+  const {run,elements}=lab(code,'native',null,false);
+  run(`j.meta.widthPx=1920;j.meta.pitchPx=121;
+    screen.width=1280;screen.height=800;devicePixelRatio=1.5;
+    renderTouchStatus();$('start').onclick()`);
+  assert.equal(run('phase'),'hands_off');
+  assert.equal(run('active.paragraph.geometry.widthPx'),1920);
+  assert.equal(run('active.paragraph.displayWidthPx'),1920);
+  assert.equal(run('active.paragraph.geometry.pitchPx'),121);
+  assert.equal(run('active.paragraph.geometry.mmPerPx'),310/1920);
+  assert.equal(run('active.touch.nativeWidthPx'),1920);
+  assert.match(elements.get('displayCalibration').textContent,/1920 px/);
+  run(`const homeCenters=['f','j'].map(label=>{
+      const k=active.paragraph.geometry.keys.find(k=>k.label===label);
+      return {x:k.x+k.w/2,y:k.y+k.h/2};
+    });
+    tick('heartbeat',100);
+    tick('down',120,1,homeCenters[0].x,homeCenters[0].y);
+    tick('down',140,2,homeCenters[1].x,homeCenters[1].y);`);
+  assert.equal(run('phase'),'release');
+  assert.equal(run('active.paragraph.home.every(h=>h.correct && h.deviationMm===0)'),true);
+});
+test('browser keyboard calibration and recorded width stay in the lower window CSS coordinates',()=>{
+  const {run,elements}=lab('A','browser',null,false);
+  run(`conv.geometry=P.geometry(1440,310,19.5,false);
+    devicePixelRatio=1.5;renderTouchStatus();$('start').onclick()`);
+  assert.equal(run('phase'),'hands_off');
+  assert.equal(run('active.paragraph.geometry.widthPx'),1440);
+  assert.equal(run('active.paragraph.displayWidthPx'),1440);
+  assert.equal(run('active.paragraph.geometry.mmPerPx'),310/1440);
+  assert.equal(run('active.paragraph.geometry.coordinateSpace'),'ConvBoard CSS pixels');
+  assert.match(elements.get('displayCalibration').textContent,/1440 CSS px/);
+});
+test('missing or invalid native width blocks calibrated logging instead of guessing 1280px',()=>{
+  const {run,elements}=lab('C','native',null,false);
+  for(const width of ['undefined','null','0','-1','1920.5','"1920"']) {
+    run(`j.meta.widthPx=${width};renderTouchStatus();$('start').onclick()`);
+    assert.equal(run('active'),null);
+    assert.match(elements.get('cueText').textContent,/가로 해상도/);
+    assert.match(elements.get('displayCalibration').textContent,/자동 감지/);
+  }
+});
 for(const code of ['A','B','C','D'])test(code+' standalone paragraph from hands-off to maps and export',async()=>{
   const {run,elements}=lab(code);
   assert.equal(run('phase'),'hands_off');
